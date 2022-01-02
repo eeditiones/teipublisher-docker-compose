@@ -1,0 +1,30 @@
+services:
+  publisher:
+    ports:
+      - 8080:8080
+    environment:
+      NER_ENDPOINT: http://ner:8001
+      CONTEXT_PATH: ""
+    build:
+      context: https://github.com/eeditiones/tei-publisher-app.git#feature/annotations-nlp
+      dockerfile: Dockerfile
+    depends_on:
+      - ner
+  ner:
+    build:
+      context: https://github.com/eeditiones/tei-publisher-ner.git#master
+      dockerfile: Dockerfile
+  frontend:
+    image: nginx:alpine
+    volumes:
+      - ./nginx/conf/:/etc/nginx/conf.d/:ro
+      - ./certbot/www:/var/www/certbot/:ro
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - publisher
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./certbot/www/:/var/www/certbot/:rw
