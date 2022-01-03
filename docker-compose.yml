@@ -15,7 +15,7 @@ services:
   frontend:
     image: nginx:alpine
     volumes:
-      - ./nginx/conf/:/etc/nginx/conf.d/:ro
+      - ./conf/:/etc/nginx/conf.d/:ro
       - ./certbot/www:/var/www/certbot/:ro
       - ./certbot/conf/:/etc/nginx/ssl/:ro
     ports:
