@@ -1,7 +1,5 @@
 services:
   publisher:
-    ports:
-      - 8080:8080
     environment:
       NER_ENDPOINT: http://ner:8001
       CONTEXT_PATH: ""
@@ -19,6 +17,7 @@ services:
     volumes:
       - ./nginx/conf/:/etc/nginx/conf.d/:ro
       - ./certbot/www:/var/www/certbot/:ro
+      - ./certbot/conf/:/etc/nginx/ssl/:ro
     ports:
       - 80:80
       - 443:443
@@ -28,3 +27,4 @@ services:
     image: certbot/certbot:latest
     volumes:
       - ./certbot/www/:/var/www/certbot/:rw
+      - ./certbot/conf/:/etc/letsencrypt/:rw
