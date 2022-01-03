@@ -9,7 +9,7 @@ The following services are configured by the [docker-compose](docker-compose.yml
 * frontend: nginx reverse proxy which forwards requests to TEI Publisher
 * certbot: letsencrypt certbot required to register an SSL certificate
 
-The publisher and ner services will be built from the corresponding github repositories using the current master branch.
+The publisher and ner services will be built from the corresponding github repositories using the current master branch. You thus only need to clone this repository to either your local machine or a server you are installing. Everything else is handled automatically by docker compose.
 
 # Default Configuration
 
@@ -21,12 +21,13 @@ To start, simply call
 docker compose up -d
 ```
 
-Afterwards you should be able to access TEI Publisher using http://localhost.
+Afterwards you should be able to access TEI Publisher using http://localhost. Additionally eXide can be accessed via http://localhost/apps/eXide (on a production system you want to disable that).
 
 # Deployment on a Public Server
 
 If you would like to deploy the configuration to a public server, you must first acquire an SSL certificate to enable users to securly connect via https. The compose configuration is already prepared to make this as easy as possible.
 
+1. Clone this repository to a folder on the server
 1. Copy the nginx configuration file [conf/example.com.tmpl](conf/example.com.tmpl) to e.g. `conf/my.domain.com.conf`, where `my.domain.com` would correspond to the domain name of the webserver you are configuring the service for
 2. Open the copied file in an editor and replace all occurrences of `example.com` with your domain name
 3. Also change the name of the **upstream** entry to a unique name (otherwise it will collide with the default config):
@@ -36,16 +37,21 @@ If you would like to deploy the configuration to a public server, you must first
     }
     ```
 
-    Change the two references to the `docker-publisher` upstream server below accordingly, e.g.:
+    Change the two references to the `docker-publisher` upstream server below accordingly:
 
     ```
     proxy_pass http://docker-publisher.example.com/exist/apps/tei-publisher$request_uri;
+    ...
+    proxy_pass http://docker-publisher.example.com/exist$request_uri;
     ```
 
 4. Run the following command to request an SSL certificate for your domain, again replacing the final `example.com` with your domain name:
    ```sh
    docker compose run --rm  certbot certonly --webroot --webroot-path /var/www/certbot/ -d example.com
    ```
+
+   This will ask you for an email address, verify your server and store certificate files into `certbot/conf/`.
+
 5. In the nginx configuration file, uncomment the two lines starting with `# ssl_certificate` by removing the leading `#`:
    ```
    ssl_certificate /etc/nginx/ssl/live/publisher.jinntec.com/fullchain.pem;
@@ -53,5 +59,5 @@ If you would like to deploy the configuration to a public server, you must first
    ```
 6. Stop and restart the services:
    ```sh
-   docker restart
+   docker compose restart
    ```
