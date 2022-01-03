@@ -1,5 +1,6 @@
 # Configuration for TEI Publisher with virtual host and SSL
 
+# change name of upstream server below to something unique
 upstream docker-publisher {
   server publisher:8080 fail_timeout=0;
 }
@@ -27,10 +28,12 @@ server {
 
   server_name example.com;
 
-  ssl_certificate /etc/nginx/ssl/live/example.com/fullchain.pem;
-  ssl_certificate_key /etc/nginx/ssl/live/example.com/privkey.pem;
+  # uncomment after 
+  # ssl_certificate /etc/nginx/ssl/live/example.com/fullchain.pem;
+  # ssl_certificate_key /etc/nginx/ssl/live/example.com/privkey.pem;
 
   location / {
+    # change upstream server placeholder 'docker-publisher' below to what you configured above for upstream
     proxy_pass http://docker-publisher/exist/apps/tei-publisher$request_uri;
     proxy_redirect http://$host/exist/apps/tei-publisher/ /;
     proxy_set_header   Host $host;
@@ -43,6 +46,7 @@ server {
   }
 
   location /apps/eXide {
+    # change upstream server placeholder 'docker-publisher' below to what you configured above for upstream
     proxy_pass http://docker-publisher/exist$request_uri;
     proxy_redirect     off;
     proxy_set_header   Host $host;
