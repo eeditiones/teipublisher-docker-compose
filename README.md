@@ -1,6 +1,8 @@
 # Docker Compose Configuration
 
-This repository contains a docker compose configuration useful to run TEI Publisher and associated services. For security reasons, it is recommended to not expose TEI Publisher and eXist-db directly, but instead protect them behind a proxy. The [docker-compose](docker-compose.yml) file therefore sets up an nginx reverse proxy.
+This repository contains a docker compose configuration useful to run TEI Publisher and associated services. Docker compose allows us to orchestrate and coordinate the various services, while keeping each service in its own, isolated environment. Setting up a server via docker compose is fast as everything comes preconfigured and you don't need to install all the dependencies (like Java, eXist-db, Python etc.) by hand. On the downside, it certainly introduces some overhead and will never be as fast as a server, which is properly maintained. For smaller, low-traffic projects docker is a viable and cheap alternative though.
+
+For security reasons, it is recommended to not expose TEI Publisher and eXist-db directly, but instead protect them behind a proxy. The [docker-compose](docker-compose.yml) file therefore sets up an nginx reverse proxy.
 
 The following services are configured by the [docker-compose](docker-compose.yml):
 
@@ -44,7 +46,7 @@ If you would like to deploy the configuration to a public server, you must first
     ...
     proxy_pass http://docker-publisher.example.com/exist$request_uri;
     ```
-
+4. Start the services to acquire SSL certificates in the next step using `docker compose up -d`
 4. Run the following command to request an SSL certificate for your domain, again replacing the final `example.com` with your domain name:
    ```sh
    docker compose run --rm  certbot certonly --webroot --webroot-path /var/www/certbot/ -d example.com
