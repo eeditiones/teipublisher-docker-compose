@@ -17,6 +17,14 @@ The publisher and ner services will be built from the corresponding github repos
 
 By default, the compose configuration will launch the proxy on port 80 of the local host, serving only http, not https. This configuration is intended for testing, not for deployment on a public facing server.
 
+To build all the services, call
+
+```sh
+docker compose build --build-arg ADMIN_PASS=my_pass
+```
+
+where `my_pass` sets the password for the eXist admin user (recommended). You can remove the `--build-arg` parameter entirely to keep an empty password.
+
 To start, simply call
 
 ```sh
