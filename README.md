@@ -39,15 +39,15 @@ If you would like to deploy the configuration to a public server, you must first
 
 1. Clone this repository to a folder on the server
 1. Copy the nginx configuration file [conf/example.com.tmpl](conf/example.com.tmpl) to e.g. `conf/my.domain.com.conf`, where `my.domain.com` would correspond to the domain name of the webserver you are configuring the service for
-2. Open the copied file in an editor and replace all occurrences of `example.com` with your domain name
-3. Also change the name of the **upstream** entry to a unique name (otherwise it will collide with the default config):
+2. Open the copied file in an editor and replace all occurrences of `example.com` with your domain name. *Important*: this also applies to the commented out SSL section, which you will enable later below.
+3. Change the name of the **upstream** entry to a unique name (otherwise it will collide with the default config):
    ```
     upstream docker-publisher.example.com {
         server publisher:8080 fail_timeout=0;
     }
     ```
 
-    Change the two references to the `docker-publisher` upstream server below accordingly:
+    Change the two references to the `docker-publisher` upstream server below accordingly (including the commented out SSL section):
 
     ```
     proxy_pass http://docker-publisher.example.com/exist/apps/tei-publisher$request_uri;
@@ -55,19 +55,15 @@ If you would like to deploy the configuration to a public server, you must first
     proxy_pass http://docker-publisher.example.com/exist$request_uri;
     ```
 4. Start the services to acquire SSL certificates in the next step using `docker compose up -d`
-4. Run the following command to request an SSL certificate for your domain, again replacing the final `example.com` with your domain name:
+5. Run the following command to request an SSL certificate for your domain, again replacing the final `example.com` with your domain name:
    ```sh
    docker compose run --rm  certbot certonly --webroot --webroot-path /var/www/certbot/ -d example.com
    ```
 
    This will ask you for an email address, verify your server and store certificate files into `certbot/conf/`.
 
-5. In the nginx configuration file, uncomment the two lines starting with `# ssl_certificate` by removing the leading `#`:
-   ```
-   ssl_certificate /etc/nginx/ssl/live/publisher.jinntec.com/fullchain.pem;
-   ssl_certificate_key /etc/nginx/ssl/live/publisher.jinntec.com/privkey.pem;
-   ```
-6. Stop and restart the services:
+6. In the nginx configuration file, uncomment the SSL section by removing the leading `#`
+7. Stop and restart the services:
    ```sh
    docker compose restart
    ```
