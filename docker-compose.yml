@@ -2,16 +2,27 @@ services:
   publisher:
     environment:
       NER_ENDPOINT: http://ner:8001
-      CONTEXT_PATH: ""
+      CONTEXT_PATH: "" # TEI Publisher will be mapped to the root of the website
     build:
-      context: https://github.com/eeditiones/tei-publisher-app.git#feature/annotations-nlp
+      context: https://github.com/eeditiones/tei-publisher-app.git#master
       dockerfile: Dockerfile
+    # comment in to automatically restart:
+    # restart: always
+    volumes:
+      # database files will be stored in a volume to avoid data loss
+      # when the service is updated
+      - /exist/data
     depends_on:
       - ner
   ner:
-    build:
-      context: https://github.com/eeditiones/tei-publisher-ner.git#master
-      dockerfile: Dockerfile
+    # image will be pulled from github
+    image: ghcr.io/eeditiones/tei-publisher-ner/teipublisher-ner:master
+    # enable if you want to build from source:
+    # build:
+    #   context: https://github.com/eeditiones/tei-publisher-ner.git#master
+    #   dockerfile: Dockerfile
+    # comment in to automatically restart:
+    # restart: always
   frontend:
     image: nginx:alpine
     volumes:
@@ -23,6 +34,8 @@ services:
       - 443:443
     depends_on:
       - publisher
+    # comment in to automatically restart:
+    # restart: always
   certbot:
     image: certbot/certbot:latest
     volumes:
