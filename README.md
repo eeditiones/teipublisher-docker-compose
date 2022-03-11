@@ -35,42 +35,7 @@ To start, simply call
 docker compose up -d
 ```
 
-Afterwards you should be able to access TEI Publisher using http://localhost. Additionally eXide can be accessed via http://localhost/apps/eXide (on a production system you want to disable that).
-
-# Deployment on a Public Server
-
-If you would like to deploy the configuration to a public server, you must first acquire an SSL certificate to enable users to securly connect via https. The compose configuration is already prepared to make this as easy as possible.
-
-1. Clone this repository to a folder on the server
-1. Copy the nginx configuration file [conf/example.com.tmpl](conf/example.com.tmpl) to e.g. `conf/my.domain.com.conf`, where `my.domain.com` would correspond to the domain name of the webserver you are configuring the service for
-2. Open the copied file in an editor and replace all occurrences of `example.com` with your domain name. *Important*: this also applies to the commented out SSL section, which you will enable later below.
-3. Change the name of the **upstream** entry to a unique name (otherwise it will collide with the default config):
-   ```
-    upstream docker-publisher.example.com {
-        server publisher:8080 fail_timeout=0;
-    }
-    ```
-
-    Change the two references to the `docker-publisher` upstream server below accordingly (including the commented out SSL section):
-
-    ```
-    proxy_pass http://docker-publisher.example.com/exist/apps/tei-publisher$request_uri;
-    ...
-    proxy_pass http://docker-publisher.example.com/exist$request_uri;
-    ```
-4. Start the services to acquire SSL certificates in the next step using `docker compose up -d`
-5. Run the following command to request an SSL certificate for your domain, again replacing the final `example.com` with your domain name:
-   ```sh
-   docker compose run --rm  certbot certonly --webroot --webroot-path /var/www/certbot/ -d example.com
-   ```
-
-   This will ask you for an email address, verify your server and store certificate files into `certbot/conf/`.
-
-6. In the nginx configuration file, uncomment the SSL section by removing the leading `#`
-7. Stop and restart the services:
-   ```sh
-   docker compose restart
-   ```
+Afterwards you should be able to access TEI Publisher using http://localhost. Additionally eXide can be accessed via http://localhost/apps/eXide (on a production system you want to disable that). 
 
 # Customize the Configuration
 
@@ -121,10 +86,58 @@ Fork `tei-publisher-docker-compose` to your own git account and clone it to appl
    ```
    For deployment on a public server you would need to apply the same to your copy of `conf/example.com.tmpl` (see above about how to copy/modify this file).
 
-## 3. Start your compose config on a server
+You could now start testing your configuration on your local machine.
+
+## 3. Deploy to a Public Server
 
 Rent a cloud server which has docker enabled. There are various offers on the market. A good specification would include 4 gb of RAM and 2 vCPU, which you can get for less than 10 Euro per month.
 
 Once you have root access to your server, ssh into it and clone your customized docker compose configuration repository. Build and start the services as [described](#running). Depending on the configuration of your server, you may or may not have docker compose installed already. If it is not available (but docker itself is), follow the instructions in the [docker documentation](https://docs.docker.com/compose/install/).
 
-Finally, acquire a SSL certificate following the steps [documented above](#deployment-on-a-public-server).
+### Acquire an SSL certificate
+
+You may now want to make your new server available under a custom domain. For this you should acquire an SSL certificate to enable users to securly connect via https. The compose configuration is already prepared to make this as easy as possible.
+
+1. Copy the nginx configuration file [conf/example.com.tmpl](conf/example.com.tmpl) to e.g. `conf/my.domain.com.conf`, where `my.domain.com` would correspond to the domain name of the webserver you are configuring the service for
+2. Open the copied file in an editor and replace all occurrences of `example.com` with your domain name. *Important*: this also applies to the commented out SSL section, which you will enable later below.
+3. Change the name of the **upstream** entry to a unique name (otherwise it will collide with the default config):
+   ```
+    upstream docker-publisher.example.com {
+        server publisher:8080 fail_timeout=0;
+    }
+    ```
+
+    Change the two references to the `docker-publisher` upstream server below accordingly (including the commented out SSL section):
+
+    ```
+    proxy_pass http://docker-publisher.example.com/exist/apps/tei-publisher$request_uri;
+    ...
+    proxy_pass http://docker-publisher.example.com/exist$request_uri;
+    ```
+4. Start the services to acquire SSL certificates in the next step using `docker compose up -d`
+5. Run the following command to request an SSL certificate for your domain, again replacing the final `example.com` with your domain name:
+   ```sh
+   docker compose run --rm  certbot certonly --webroot --webroot-path /var/www/certbot/ -d example.com
+   ```
+
+   This will ask you for an email address, verify your server and store certificate files into `certbot/conf/`.
+
+6. In the nginx configuration file, uncomment the SSL section by removing the leading `#`
+7. Stop and restart the services:
+   ```sh
+   docker compose restart
+   ```
+
+## Certificate Renewal
+
+The LetsEncrypt SSL certificate issued above will only be valid for a certain duration and needs to be renewed from time to time. We'll thus install a cron job, which calls the script `certbot-renew.sh` once every day to check if the certificate needs to be renewed.
+
+1. edit `certbot-renew.sh` and replace `example.com` with the hostname for which you acquired a certificate:
+   ```sh
+   CERTFILE=./certbot/conf/live/example.com/cert.pem
+   ```
+2. register a cron job to call this script once a day. Call `crontab -e` and add a line:
+   ```
+   59 18 * * * /root/my-edition-docker/certbot-renew.sh
+   ```
+   replacing `/root/my-edition-docker` with the correct path to wherever you cloned the configuration.
