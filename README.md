@@ -100,9 +100,9 @@ COPY --from=tei /tmp/my-edition/build/*.xar /exist/autodeploy/
 
 Push the final Dockerfile to your git repo.
 
-## 2. Fork tei-publisher-docker and modify
+## 2. Fork this repo and customize it
 
-Fork `tei-publisher-docker` to your own github account and clone it to apply some modifications:
+Fork `tei-publisher-docker-compose` to your own git account and clone it to apply some modifications:
 
 1. edit `docker-compose.yml` and replace `services.publisher.build.context` to point to the repository in which your custom application lives:
    ```yaml
@@ -112,7 +112,7 @@ Fork `tei-publisher-docker` to your own github account and clone it to apply som
             NER_ENDPOINT: http://ner:8001
             CONTEXT_PATH: "" # TEI Publisher will be mapped to the root of the website
          build:
-            context: https://github.com/eeditiones/tei-publisher-app.git#master
+            context: https://github.com/my-github-user/my-edition.git#master
    ```
 2. modify `conf/default.conf` and replace the two lines referring to `/apps/tei-publisher`:
    ```
