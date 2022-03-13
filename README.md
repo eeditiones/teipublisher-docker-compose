@@ -141,3 +141,25 @@ The LetsEncrypt SSL certificate issued above will only be valid for a certain du
    59 18 * * * /root/my-edition-docker/certbot-renew.sh
    ```
    replacing `/root/my-edition-docker` with the correct path to wherever you cloned the configuration.
+
+# Expose the Full eXist-db for Development
+
+The default configuration will hide most of eXist-db behind the proxy, providing access only to the chosen app. During development, you may instead want to expose everything, i.e. including dashboard, eXide etc. To do so, change the nginx configuration:
+
+1. Remove the section referring to eXide
+2. Change the / section to read, replacing `docker-publisher` with whatever you chose as name for the upstream:
+   ```
+   location / {
+    # change upstream server placeholder 'docker-publisher' below to what you configured above for upstream
+    proxy_pass http://docker-publisher$request_uri;
+    proxy_redirect http://$host/ /;
+    proxy_set_header   Host $host;
+    proxy_set_header   X-Real-IP $remote_addr;
+    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header   X-Forwarded-Host $server_name;
+    # proxy_cookie_path /exist /;
+    client_max_body_size  512m;
+  }
+  ```
+
+Finally, comment out the line defining CONTEXT_PATH in `docker-compose.yml`. After restarting docker compose you should be redirected to the dashboard as the main entry point.
