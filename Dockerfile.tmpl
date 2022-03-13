@@ -38,8 +38,8 @@ RUN  mkdir -p ~/.ssh && ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
 RUN  git clone https://github.com/eeditiones/my-edition.git \
     # replace my-edition with name of your app
     && cd my-edition \
-    && echo Checking out ${MY_EDITION_VERSION}} \
-    && git checkout ${MY_EDITION_VERSION}} \
+    && echo Checking out ${MY_EDITION_VERSION} \
+    && git checkout ${MY_EDITION_VERSION} \
     && ant
 
 RUN curl -L -o /tmp/oas-router-${ROUTER_VERSION}.xar http://exist-db.org/exist/apps/public-repo/public/oas-router-${ROUTER_VERSION}.xar
