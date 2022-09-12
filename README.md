@@ -163,3 +163,7 @@ The default configuration will hide most of eXist-db behind the proxy, providing
   ```
 
 Finally, comment out the line defining CONTEXT_PATH in `docker-compose.yml`. After restarting docker compose you should be redirected to the dashboard as the main entry point.
+
+### Infrastructure model
+
+![Infrastructure model](.infragenie/infrastructure_model.png)
