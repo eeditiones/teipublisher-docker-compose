@@ -128,6 +128,40 @@ You may now want to make your new server available under a custom domain. For th
    docker compose restart
    ```
 
+## Backing up eXist-db
+
+If you would like to create regular backups of the data in your eXist-db:
+
+1. edit `docker-compose.yml` and enable the volume mapping for `/exist/backup`:
+   ```
+   # uncomment to map eXist-db backups to local directory
+   - ./backup:/exist/backup
+   ```
+2. retrieve the eXist-db configuration file from the running docker container with
+   ```
+   docker compose cp publisher:/exist/etc/conf.xml .
+   ```
+3. edit conf.xml and find the section referring to consistency checks and backups. Uncomment the system job, specify the backup directory and a time (cron syntax) to trigger the backup:
+   ```xml
+   <job type="system" name="check1" 
+      class="org.exist.storage.ConsistencyCheckTask"
+      cron-trigger="0 0 4 * * ?">
+      <parameter name="output" value="/exist/backup"/>
+      <parameter name="backup" value="yes"/>
+      <parameter name="incremental" value="no"/>
+      <parameter name="incremental-check" value="no"/>
+      <parameter name="max" value="2"/>
+   </job>
+   ```
+4. copy the `conf.xml` back to the docker container:
+   ```
+   docker compose cp conf.xml publisher:/exist/etc
+   ```
+5. restart the container:
+   ```
+   docker compose restart publisher
+   ```
+
 ## Certificate Renewal
 
 The LetsEncrypt SSL certificate issued above will only be valid for a certain duration and needs to be renewed from time to time. We'll thus install a cron job, which calls the script `certbot-renew.sh` once every day to check if the certificate needs to be renewed.

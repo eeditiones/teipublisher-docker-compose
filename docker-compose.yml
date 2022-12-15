@@ -12,6 +12,8 @@ services:
       # database files will be stored in a volume to avoid data loss
       # when the service is updated
       - /exist/data
+      # uncomment to map eXist-db backups to local directory
+      # - ./backup:/exist/backup
     depends_on:
       - ner
   ner:
