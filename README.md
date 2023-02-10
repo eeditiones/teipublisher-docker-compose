@@ -47,8 +47,8 @@ The default configuration exposes the TEI Publisher application itself. Instead 
 
 ## 1. Create a Dockerfile
 
-We would suggest to copy TEI Publisher's main [Dockerfile](https://github.com/eeditiones/tei-publisher-app/blob/bdffd983b84297f296145e16687a59841aef5161/Dockerfile#L55) to the root of your custom app repository: 
-remove the sections referring to the Shakespeare and Van Gogh demo apps, and replace the bits referring to TEI Publisher with your own custom app. By going through the file it should be easy to see. The relevant lines you should have are:  
+We would suggest to copy the included template [Dockerfile](Dockerfile.tmpl) to the root of your custom app repository: 
+by going through the file it should be easy to see. The relevant lines you should have are:  
 
 ```
 ARG MY_EDITION_VERSION=1.0.6
