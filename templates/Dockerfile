@@ -3,7 +3,7 @@ FROM openjdk:8-jdk-slim as builder
 
 USER root
 
-ENV ANT_VERSION 1.10.11
+ENV ANT_VERSION 1.10.12
 ENV ANT_HOME /etc/ant-${ANT_VERSION}
 
 WORKDIR /tmp
@@ -11,6 +11,12 @@ WORKDIR /tmp
 RUN apt-get update && apt-get install -y \
     git \
     curl
+
+{% if application.npm %}
+RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - \
+    && apt-get install -y nodejs \
+    && curl -L https://www.npmjs.com/install.sh | sh
+{% endif %}
 
 RUN curl -L -o apache-ant-${ANT_VERSION}-bin.tar.gz http://www.apache.org/dist/ant/binaries/apache-ant-${ANT_VERSION}-bin.tar.gz \
     && mkdir ant-${ANT_VERSION} \
@@ -29,17 +35,20 @@ ARG TEMPLATING_VERSION=1.0.2
 ARG PUBLISHER_LIB_VERSION=2.10.0
 ARG ROUTER_VERSION=0.5.1
 # replace with name of your edition repository and choose branch to build
-ARG MY_EDITION_VERSION=master
+ARG {{application.abbrev|upper}}_VERSION={{application.version}}
+{% for key, value in application.environment.items() %}
+ARG {{key}}
+{% endfor %}
 
 # add key
 RUN  mkdir -p ~/.ssh && ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
 
 # Replace git URL below to point to your git repository 
-RUN  git clone https://github.com/eeditiones/my-edition.git \
+RUN  git clone {{application.repository}} \
     # replace my-edition with name of your app
-    && cd my-edition \
-    && echo Checking out ${MY_EDITION_VERSION} \
-    && git checkout ${MY_EDITION_VERSION} \
+    && cd {{application.abbrev}} \
+    && echo Checking out {{'${'}}{{application.abbrev|upper}}_VERSION} \
+    && git checkout {{'${'}}{{application.abbrev|upper}}_VERSION} \
     && ant
 
 RUN curl -L -o /tmp/oas-router-${ROUTER_VERSION}.xar http://exist-db.org/exist/apps/public-repo/public/oas-router-${ROUTER_VERSION}.xar
@@ -48,7 +57,7 @@ RUN curl -L -o /tmp/templating-${TEMPLATING_VERSION}.xar http://exist-db.org/exi
 
 FROM eclipse-temurin:11-jre-alpine
 
-ARG EXIST_VERSION=5.3.1
+ARG EXIST_VERSION={{exist_version}}
 
 RUN apk add curl
 
@@ -57,8 +66,8 @@ RUN curl -L -o /tmp/exist-distribution-${EXIST_VERSION}-unix.tar.bz2 https://git
     && rm /tmp/exist-distribution-${EXIST_VERSION}-unix.tar.bz2 \
     && mv /tmp/exist-distribution-${EXIST_VERSION} /exist
 
-# replace my-edition with name of your app
-COPY --from=tei /tmp/my-edition/build/*.xar /exist/autodeploy/
+# replace {{application.abbrev}} with name of your app
+COPY --from=tei /tmp/{{application.abbrev}}/{{application.build_dir}}/*.xar /exist/autodeploy/
 COPY --from=tei /tmp/*.xar /exist/autodeploy/
 
 WORKDIR /exist

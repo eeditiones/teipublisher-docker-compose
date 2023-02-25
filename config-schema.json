@@ -1,0 +1,40 @@
+{
+    "$id": "https://teipublisher.com/static/schema/config",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "TEI Publisher Static Site Generator: Configuration Schema",
+    "type": "object",
+    "properties": {
+        "domain": {
+            "type": "string"
+        },
+        "application": {
+            "type": "object",
+            "properties": {
+                "abbrev": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "repository": {
+                    "type": "string"
+                },
+                "dockerfile": {
+                    "type": "string"
+                },
+                "args": {
+                    "type": "object"
+                }
+            },
+            "required": ["abbrev", "version"]
+        },
+        "exist_version": {
+            "type": "string",
+            "default": "6.2.0"
+        }
+    },
+    "required": ["domain"]
+}

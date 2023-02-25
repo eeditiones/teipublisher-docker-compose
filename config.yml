@@ -1,0 +1,14 @@
+domain: workshop.teipublisher.com
+application:
+  image: ghcr.io/eeditiones/tei-publisher-app/teipublisher
+  abbrev: "tei-publisher"
+  version: "master"
+  # repository: "https://${GITLAB_USER}:${GITLAB_PASSWORD}@gitlab.existsolutions.com/akademie-mainz/edep.git"
+  # dockerfile: "Dockerfile"
+  # args:
+  #   GITLAB_USER: 'myuser'
+  #   GITLAB_PASSWORD: 'pass'
+# exist_version: 6.2.0
+# output_dir: "dist"
+ner: true
+npm: true

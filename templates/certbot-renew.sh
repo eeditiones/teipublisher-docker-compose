@@ -1,6 +1,6 @@
 #!/bin/sh
 cd $(dirname "$0")
-CERTFILE=./certbot/conf/live/example.com/cert.pem
+CERTFILE=./certbot/conf/live/{{domain}}/cert.pem
 MAXDAYS=10
 
 # if cert expires in 10 days or less, run docker action
