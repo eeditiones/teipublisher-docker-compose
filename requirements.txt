@@ -2,4 +2,3 @@ Jinja2
 typer[all]
 typing-extensions
 jsonschema
-shutil
