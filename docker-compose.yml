@@ -1,9 +1,10 @@
 services:
   publisher:
-    environment:
-      NER_ENDPOINT: http://ner:8001
-      CONTEXT_PATH: "" # TEI Publisher will be mapped to the root of the website
     build:
+      args:
+        NER_ENDPOINT: http://ner:8001
+        CONTEXT_PATH: "" # TEI Publisher will be mapped to the root of the website
+        PROXY_CACHING: false
       context: https://github.com/eeditiones/tei-publisher-app.git#master
       dockerfile: Dockerfile
     # comment in to automatically restart:
