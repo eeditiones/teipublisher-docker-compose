@@ -41,14 +41,14 @@ ARG MY_EDITION_VERSION=master
 RUN  mkdir -p ~/.ssh && ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
 
 # Replace git URL below to point to your git repository 
-RUN  git clone https://github.com/eeditiones/my-edition.git \
+RUN  git clone https://github.com/eeditiones/tei-publisher-app.git \
     # replace my-edition with name of your app
-    && cd my-edition \
+    && cd tei-publisher-app \
     && echo Checking out ${MY_EDITION_VERSION} \
     && git checkout ${MY_EDITION_VERSION} \
     && ant
 
-RUN curl -L -o /tmp/oas-router-${ROUTER_VERSION}.xar http://exist-db.org/exist/apps/public-repo/public/oas-router-${ROUTER_VERSION}.xar
+RUN curl -L -o /tmp/roaster-${ROUTER_VERSION}.xar http://exist-db.org/exist/apps/public-repo/public/roaster-${ROUTER_VERSION}.xar
 RUN curl -L -o /tmp/tei-publisher-lib-${PUBLISHER_LIB_VERSION}.xar http://exist-db.org/exist/apps/public-repo/public/tei-publisher-lib-${PUBLISHER_LIB_VERSION}.xar
 RUN curl -L -o /tmp/templating-${TEMPLATING_VERSION}.xar http://exist-db.org/exist/apps/public-repo/public/templating-${TEMPLATING_VERSION}.xar
 
@@ -64,7 +64,7 @@ RUN curl -L -o /tmp/exist-distribution-${EXIST_VERSION}-unix.tar.bz2 https://git
     && mv /tmp/exist-distribution-${EXIST_VERSION} /exist
 
 # replace my-edition with name of your app
-COPY --from=tei /tmp/my-edition/build/*.xar /exist/autodeploy/
+COPY --from=tei /tmp/tei-publisher-app/build/*.xar /exist/autodeploy/
 COPY --from=tei /tmp/*.xar /exist/autodeploy/
 
 WORKDIR /exist

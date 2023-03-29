@@ -11,11 +11,7 @@ The following services are configured by the [docker-compose](docker-compose.yml
 * frontend: nginx reverse proxy which forwards requests to TEI Publisher
 * certbot: letsencrypt certbot required to register an SSL certificate
 
-You only need to clone this repository to either your local machine or a server you are installing. Everything else is handled automatically by docker compose.
-
-# Default Configuration
-
-The configuration currently builds TEI Publisher from the master branch. Once TEI Publisher 8 has been released, you will also be able to use that version. The named entity recognition service is pulled as image from the corresponding github package repository. Again the master version is required as there has not been an official release yet. If you do not need or want the named entity recognition service, comment out the corresponding section in `docker-compose.yml`, including the `depends_on: ner` above. TEI Publisher will still work.
+Clone this repository to either your local machine or a server you are installing. By default it will build and deploy the main TEI Publisher application from the master branch. The named entity recognition service is pulled as image from the corresponding github package repository.If you do not need or want the named entity recognition service, comment out the corresponding section in `docker-compose.yml`, including the `depends_on: ner` above. TEI Publisher will still work.
 
 By default, the compose configuration will launch the proxy on port 80 of the local host, serving only http, not https. This configuration is intended for testing, not for deployment on a public facing server.
 
@@ -182,18 +178,27 @@ The default configuration will hide most of eXist-db behind the proxy, providing
 
 1. Remove the section referring to eXide
 2. Change the / section to read, replacing `docker-publisher` with whatever you chose as name for the upstream:
-   ```
-   location / {
-    # change upstream server placeholder 'docker-publisher' below to what you configured above for upstream
-    proxy_pass http://docker-publisher$request_uri;
-    proxy_redirect http://$host/ /;
-    proxy_set_header   Host $host;
-    proxy_set_header   X-Real-IP $remote_addr;
-    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header   X-Forwarded-Host $server_name;
-    # proxy_cookie_path /exist /;
-    client_max_body_size  512m;
-  }
-  ```
+   
+```nginx
+location / {
+   # change upstream server placeholder 'docker-publisher' below to what you configured above for upstream
+   proxy_pass http://docker-publisher$request_uri;
+   proxy_redirect http://$host/ /;
+   proxy_set_header   Host $host;
+   proxy_set_header   X-Real-IP $remote_addr;
+   proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+   proxy_set_header   X-Forwarded-Host $server_name;
+   # proxy_cookie_path /exist /;
+   client_max_body_size  512m;
+}
+```
 
-Finally, comment out the line defining CONTEXT_PATH in `docker-compose.yml`. After restarting docker compose you should be redirected to the dashboard as the main entry point.
+Finally, change the CONTEXT_PATH environment variable in `docker-compose.yml` to read `auto`:
+
+```
+environment:
+   NER_ENDPOINT: http://ner:8001
+   CONTEXT_PATH: auto
+```
+
+After restarting docker compose you should be redirected to the dashboard as the main entry point.
