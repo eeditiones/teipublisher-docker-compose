@@ -74,13 +74,13 @@ ARG ROUTER_VERSION=1.8.0
 
 ### 1.2. modify `conf/default.conf`
 
-replace the two lines referring to `/apps/tei-publisher`:
+This is the default proxy configuration used for local testing. Replace the two lines referring to `/apps/tei-publisher`:
 
 ```
 proxy_pass http://docker-publisher/exist/apps/my-edition$request_uri;
 proxy_redirect http://$host/exist/apps/my-edition/ /;
 ```
-For deployment on a public server you would need to apply the same to your copy of `conf/example.com.tmpl` (see above about how to copy/modify this file).
+For deployment on a public server you would need to apply the same to your copy of `conf/example.com.tmpl` (see next section).
 
 You could now start testing your configuration on your local machine.
 
