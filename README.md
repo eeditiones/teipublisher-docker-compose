@@ -43,11 +43,11 @@ The default configuration exposes the TEI Publisher application itself. Instead 
 
 ## 1. Create a Dockerfile
 
-We would suggest to copy the included template [Dockerfile](Dockerfile.tmpl) to the root of your custom app repository: 
-by going through the file it should be easy to see. The relevant lines you should have are:  
+Rename the included template [Dockerfile.tmpl](Dockerfile.tmpl) to [Dockerfile](Dockerfile) (overwriting the existing one) and open it in an editor. By going through the file it should be easy to see, which part needs to be changed. The relevant lines you should pay attention to are:
 
 ```
-ARG MY_EDITION_VERSION=1.0.6
+# replace with name of your edition repository and choose branch to build
+ARG MY_EDITION_VERSION=master
 ...
 # Build my-edition
 RUN  git clone https://github.com/my-github-user/my-edition.git \
@@ -59,7 +59,13 @@ RUN  git clone https://github.com/my-github-user/my-edition.git \
 COPY --from=tei /tmp/my-edition/build/*.xar /exist/autodeploy/
 ```
 
-Push the final Dockerfile to your git repo.
+By default we assume you're app is compatible with the libraries used by TEI Publisher 8. If not, change the specified versions accordingly:
+
+```
+ARG TEMPLATING_VERSION=1.1.0
+ARG PUBLISHER_LIB_VERSION=3.0.0
+ARG ROUTER_VERSION=1.8.0
+```
 
 ## 2. Fork this repo and customize it
 
