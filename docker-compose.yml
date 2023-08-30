@@ -5,10 +5,10 @@ services:
       CONTEXT_PATH: "" # TEI Publisher will be mapped to the root of the website
       PROXY_CACHING: false
     build:
-      context: .
+      context: github.com/eeditiones/tei-publisher-app.git#master
       dockerfile: Dockerfile
     # comment in to automatically restart:
-    # restart: always
+    restart: always
     volumes:
       # database files will be stored in a volume to avoid data loss
       # when the service is updated
