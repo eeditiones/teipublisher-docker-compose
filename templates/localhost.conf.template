@@ -1,20 +1,16 @@
 # Default configuration for TEI Publisher running on localhost
 # Just http, no https
-upstream docker-publisher {
-  server publisher:8080 fail_timeout=0;
-}
-
 server {
   listen 80;
   listen [::]:80;
 
   location / {
-    proxy_pass http://docker-publisher/exist/apps/tei-publisher$request_uri;
-    proxy_redirect http://$host/exist/apps/tei-publisher/ /;
+    proxy_pass http://docker-publisher${ROOT_PATH}$request_uri;
+    proxy_redirect http://$host${ROOT_PATH}/ /;
     proxy_set_header   Host $host;
     proxy_set_header   X-Real-IP $remote_addr;
     proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header   X-Forwarded-Host $host;
+    proxy_set_header   X-Forwarded-Host $server_name;
     proxy_cookie_path /exist /;
     client_max_body_size  512m;
   }
@@ -25,7 +21,7 @@ server {
     proxy_set_header   Host $host;
     proxy_set_header   X-Real-IP $remote_addr;
     proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header   X-Forwarded-Host $host;
+    proxy_set_header   X-Forwarded-Host $server_name;
     proxy_cookie_path /exist /;
     client_max_body_size  512m;
   }

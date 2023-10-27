@@ -1,12 +1,15 @@
 services:
   publisher:
-    environment:
-      NER_ENDPOINT: http://ner:8001
-      CONTEXT_PATH: "" # TEI Publisher will be mapped to the root of the website
-      PROXY_CACHING: false
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        APP_NAME: tei-publisher-app
+        APP_TAG_OR_BRANCH: v8.0.0
+        APP_REPO: https://github.com/eeditiones/tei-publisher-app.git
+        NER_ENDPOINT: http://ner:8001
+        CONTEXT_PATH: "" # TEI Publisher will be mapped to the root of the website
+        PROXY_CACHING: false
     # comment in to automatically restart:
     # restart: always
     volumes:
@@ -28,8 +31,12 @@ services:
     # restart: always
   frontend:
     image: nginx:alpine
+    environment:
+      - ROOT_PATH=/exist/apps/tei-publisher
+      - SERVER_NAME=example.com
     volumes:
-      - ./conf/:/etc/nginx/conf.d/:ro
+      - ./conf/:/etc/nginx/conf.d/:rw
+      - ./templates:/etc/nginx/templates/:ro
       - ./certbot/www:/var/www/certbot/:ro
       - ./certbot/conf/:/etc/nginx/ssl/:ro
     ports:
