@@ -78,8 +78,6 @@ COPY --from=tei /tmp/*.xar /exist/autodeploy/
 
 WORKDIR /exist
 
-ARG ADMIN_PASS=none
-
 ARG HTTP_PORT=8080
 ARG HTTPS_PORT=8443
 

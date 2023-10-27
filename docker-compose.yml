@@ -39,7 +39,7 @@ services:
     image: nginx:alpine
     environment:
       # eXist-db path the root of the server will be mapped to
-      - ROOT_PATH=
+      - ROOT_PATH=/exist/apps/tei-publisher
       # Name of the server - irrelevant on localhost
       - SERVER_NAME=example.com
     volumes:
