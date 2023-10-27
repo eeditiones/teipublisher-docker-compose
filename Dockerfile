@@ -45,7 +45,7 @@ ARG APP_TAG_OR_BRANCH=master
 # add key
 RUN  mkdir -p ~/.ssh && ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
 
-# Build tei-publisher-lib
+# Build tei-publisher-lib if version=master
 RUN if [ "${PUBLISHER_LIB_VERSION}" = "master" ]; then \
         git clone https://github.com/eeditiones/tei-publisher-lib.git \
         && cd tei-publisher-lib \
@@ -55,7 +55,7 @@ RUN if [ "${PUBLISHER_LIB_VERSION}" = "master" ]; then \
         curl -L -o /tmp/tei-publisher-lib-${PUBLISHER_LIB_VERSION}.xar https://exist-db.org/exist/apps/public-repo/public/tei-publisher-lib-${PUBLISHER_LIB_VERSION}.xar; \
     fi
 
-# Replace git URL below to point to your git repository 
+# Build the main app configured in the docker-compose.yml
 RUN  git clone ${APP_REPO} \
     # replace my-edition with name of your app
     && cd ${APP_NAME} \
