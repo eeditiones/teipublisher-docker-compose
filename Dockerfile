@@ -73,7 +73,7 @@ ARG APP_NAME=tei-publisher-app
 ARG EXIST_VERSION=6.2.0
 
 # replace my-edition with name of your app
-COPY --from=tei /tmp/${MY_EDITION_NAME}/build/*.xar /exist/autodeploy/
+COPY --from=tei /tmp/${APP_NAME}/build/*.xar /exist/autodeploy/
 COPY --from=tei /tmp/*.xar /exist/autodeploy/
 
 WORKDIR /exist
