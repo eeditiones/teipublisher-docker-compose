@@ -1,1 +1,3 @@
 certbot
+nginx/conf/default.*
+nginx/conf/localhost.*

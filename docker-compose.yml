@@ -35,8 +35,8 @@ services:
       - ROOT_PATH=/exist/apps/tei-publisher
       - SERVER_NAME=example.com
     volumes:
-      - ./conf/:/etc/nginx/conf.d/:rw
-      - ./templates:/etc/nginx/templates/:ro
+      - ./nginx/conf/:/etc/nginx/conf.d/:rw
+      - ./nginx/templates:/etc/nginx/templates/:ro
       - ./certbot/www:/var/www/certbot/:ro
       - ./certbot/conf/:/etc/nginx/ssl/:ro
     ports:
