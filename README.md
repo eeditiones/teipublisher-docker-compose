@@ -35,7 +35,7 @@ The default configuration exposes the TEI Publisher application itself. Instead 
 
 By default our configuration uses the included [Dockerfile](Dockerfile) to build the application. If you already have a Dockerfile in your app repository, ignore this section and change the build context in `docker-compose.yml` to point to the git repository in which your Dockerfile resides.
 
-For the included `Dockerfile` we use configuration variables to point to the application to be built. The relevant variables start with `APP_` and can be set in the `docker-componse.yml`:
+For the included `Dockerfile` we use configuration variables to point to the application to be built. The relevant variables start with `APP_` and can be set in the [docker-compose.yml](docker-componse.yml):
 
 ```yaml
 services:
@@ -72,7 +72,7 @@ Rent a cloud server which has docker enabled. There are various offers on the ma
 
 Once you have root access to your server, ssh into it and clone the docker compose configuration repository.
 
-For security reasons we always hide eXist-db and TEI Publisher behind a proxy. The proxy redirects incoming requests to the configured services and blocks everything else. Configuring the server requires four steps:
+Configuring the server requires four steps:
 
 1. modify `docker-compose.yml` to set the domain name and root path
 2. enable the HTTP proxy configuration
@@ -81,7 +81,7 @@ For security reasons we always hide eXist-db and TEI Publisher behind a proxy. T
 
 ### 1. Modify `docker-compose.yml`
 
-Assuming that you have a domain name for the server, edit `docker-compose.yml` and set `SERVER_NAME`:
+Assuming that you have a domain name for the server, edit [docker-compose.yml](docker-componse.yml) and set `SERVER_NAME`:
 
 ```yaml
 frontend:
@@ -97,7 +97,17 @@ frontend:
 
 ### 2. Enable HTTP proxy config
 
-Now go to the `nginx/templates` directory and either remove `localhost.conf.template` or rename it to `localhost.conf.off`, then rename `default.conf.off` to `default.conf.template`.
+For security reasons we always hide eXist-db and TEI Publisher behind a proxy. The proxy redirects incoming requests to the configured services and blocks everything else. Our setup uses 3 configuration templates:
+
+|Template file | Description |
+|---------|----------|
+| localhost.conf.template | default (enabled) for local testing only |
+| default.conf.off | disabled template for HTTP access |
+| default.ssl.conf.off | disabled template for HTTPS access |
+
+For the full server setup, we have to disable the localhost configuration and enable the HTTP configuration to acquire an SSL certificate. Once this is done, we can enable the HTTPS configuration as well.
+
+Go to the `nginx/templates` directory and either remove `localhost.conf.template` or rename it to `localhost.conf.off`, then rename `default.conf.off` to `default.conf.template`.
 
 ### 3. Acquire an SSL certificate
 
@@ -120,6 +130,26 @@ Now restart the services:
    ```sh
    docker compose restart
    ```
+
+## Useful docker compose commands
+
+Build (without cache) and start all services
+
+```sh
+docker compose up -d --build --no-cache
+```
+
+Display log output of the TEI Publisher service (i.e. eXist-db logs)
+
+```sh
+docker compose logs publisher
+```
+
+Stop all services:
+
+```sh
+docker compose down
+```
 
 ## Change the server root context
 
