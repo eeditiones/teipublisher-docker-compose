@@ -35,25 +35,22 @@ The default configuration exposes the TEI Publisher application itself. Instead 
 
 By default our configuration uses the included [Dockerfile](Dockerfile) to build the application. If you already have a Dockerfile in your app repository, change the build context in `docker-compose.yml` to point to the git repository in which your Dockerfile resides. If it is a private repository, it may require an access token (see the commented out examples for `context`). You can set tokens in the [.env](.env) file.
 
-For the included `Dockerfile` we use configuration variables to point to the application to be built. The relevant variables start with `APP_` and can be set in the [docker-compose.yml](docker-componse.yml):
+For the included `Dockerfile` we use configuration variables to point to the application to be built. The relevant variables start with `APP_` and should be set in the [.env](.env) environment file:
 
-```yaml
-services:
-  publisher:
-    build:
-      context: .
-      # use one of the below instead if you want to build from an external git repository (needs a Dockerfile):
-      # context: https://github.com/eeditiones/tei-publisher-app.git#master
-      # if the repo is not public, you may need to provide an ACCESS_TOKEN (specify in .env)
-      # context: https://${ACCESS_TOKEN_NAME}:${ACCESS_TOKEN_VALUE}@gitlab.com/xxx/xxx.git
-      dockerfile: Dockerfile
-      args:
-        # Name of the custom app to include - should correspond to the name of the repository
-        APP_NAME: tei-publisher-app
-        # Tag or branch to build
-        APP_TAG_OR_BRANCH: v8.0.0
-        # GIT repository to clone the app from
-        APP_REPO: https://github.com/eeditiones/tei-publisher-app.git
+```sh
+# Name of the custom app to include - should correspond to the name of the repository
+APP_NAME=tei-publisher-app
+# Tag or branch to build
+APP_TAG_OR_BRANCH=feature/annotation-ng
+# GIT repository to clone the app from
+APP_REPO=https://github.com/eeditiones/tei-publisher-app.git
+# eXist-db path the root of the server will be mapped to
+ROOT_PATH=/exist/apps/tei-publisher
+# Name of the server - irrelevant on localhost
+SERVER_NAME=example.com
+# When building from a Dockerfile located in a private repo, you may need to set access tokens
+ACCESS_TOKEN_NAME=xxx
+ACCESS_TOKEN_VALUE=yyy
 ```
 
 The default settings will build version 8 of TEI Publisher. To build your own custom app instead, change the three variables to point to your git repo, a tag/branch on it (e.g. `master`), and the name of the app. The latter should correspond to the repository name.
@@ -85,16 +82,13 @@ Configuring the server requires four steps:
 
 ### 1. Modify `docker-compose.yml`
 
-Assuming that you have a domain name for the server, edit [docker-compose.yml](docker-componse.yml) and set `SERVER_NAME`:
+Assuming that you have a domain name for the server, edit [.env](.env) and set `SERVER_NAME`:
 
-```yaml
-frontend:
-    image: nginx:alpine
-    environment:
-      # eXist-db path the root of the server will be mapped to
-      - ROOT_PATH=/exist/apps/tei-publisher
-      # Name of the server - irrelevant on localhost
-      - SERVER_NAME=demo.teipublisher.com
+```sh
+# eXist-db path the root of the server will be mapped to
+ROOT_PATH=/exist/apps/tei-publisher
+# Name of the server - irrelevant on localhost
+SERVER_NAME=example.com
 ```
 
 `ROOT_PATH` should correspond to the database path under which your application is found.
