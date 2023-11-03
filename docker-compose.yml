@@ -2,6 +2,10 @@ services:
   publisher:
     build:
       context: .
+      # use one of the below instead if you want to build from an external git repository (needs a Dockerfile):
+      # context: https://github.com/eeditiones/tei-publisher-app.git#master
+      # if the repo is not public, you may need to provide an ACCESS_TOKEN (specify in .env)
+      # context: https://${ACCESS_TOKEN_NAME}:${ACCESS_TOKEN_VALUE}@gitlab.com/xxx/xxx.git
       dockerfile: Dockerfile
       args:
         # Name of the custom app to include - should correspond to the name of the repository
