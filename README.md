@@ -10,6 +10,7 @@ The following services are configured by the [docker-compose](docker-compose.yml
 * ner: TEI Publisher named entity recognition service
 * frontend: nginx reverse proxy which forwards requests to TEI Publisher
 * certbot: letsencrypt certbot required to register an SSL certificate
+* cantaloupe: a IIIF server for images
 
 Clone this repository to either your local machine or a server you are installing. By default it will build and deploy the main TEI Publisher application from the master branch. The named entity recognition service is pulled as image from the corresponding github package repository.If you do not need or want the named entity recognition service, comment out the corresponding section in `docker-compose.yml`, including the `depends_on: ner` above. TEI Publisher will still work.
 
@@ -21,7 +22,7 @@ By default, the compose configuration will launch the proxy on port 80 of the lo
 docker compose up -d --build
 ```
 
-Afterwards you should be able to access TEI Publisher using http://localhost.
+Afterwards you should be able to access TEI Publisher using http://localhost. The cantaloupe IIIF service will be mapped to the path `/iiif`, so for testing try: http://localhost/iiif/2/test.tif/full/full/0/default.jpg.
 
 To stop the services again, call:
 
@@ -35,17 +36,22 @@ The default configuration exposes the TEI Publisher application itself. Instead 
 
 By default our configuration uses the included [Dockerfile](Dockerfile) to build the application. If you already have a Dockerfile in your app repository, change the build context in `docker-compose.yml` to point to the git repository in which your Dockerfile resides. If it is a private repository, it may require an access token (see the commented out examples for `context`). You can set tokens in the [.env](.env) file.
 
-For the included `Dockerfile` we use configuration variables to point to the application to be built. The relevant variables start with `APP_` and should be set in the [.env](.env) environment file:
+For the included `Dockerfile` we use configuration variables to point to the application to be built. The relevant variables start with `APP_` and should be set in the [.env](.env) environment file. The file currently includes this:
 
 ```sh
 # Name of the custom app to include - should correspond to the name of the repository
 APP_NAME=tei-publisher-app
 # Tag or branch to build
-APP_TAG_OR_BRANCH=feature/annotation-ng
+APP_TAG_OR_BRANCH=v8.0.0
 # GIT repository to clone the app from
 APP_REPO=https://github.com/eeditiones/tei-publisher-app.git
-# eXist-db path the root of the server will be mapped to
+# eXist-db path the root of the server will be mapped to. Specifying a path here
+# will map the root to one single app. Change to empty string if you want to expose the
+# entire database and also set CONTEXT_PATH=auto below.
 ROOT_PATH=/exist/apps/tei-publisher
+# App context path: set to 'auto' if the app should be exposed under its full path 
+# (e.g. /exist/apps/tei-publisher)
+CONTEXT_PATH=""
 # Name of the server - irrelevant on localhost
 SERVER_NAME=example.com
 # When building from a Dockerfile located in a private repo, you may need to set access tokens
@@ -151,16 +157,16 @@ docker compose down
 
 ## Change the server root context
 
-The two most important configuration settings can be found in `docker-compose.yml`:
+The two most important configuration settings can be found in [.env](.env):
 
 ```
-frontend:
-    image: nginx:alpine
-    environment:
-      # eXist-db path the root of the server will be mapped to
-      - ROOT_PATH=/exist/apps/tei-publisher
-      # Name of the server - irrelevant on localhost
-      - SERVER_NAME=example.com
+# eXist-db path the root of the server will be mapped to. Specifying a path here
+# will map the root to one single app. Change to empty string if you want to expose the
+# entire database and also set CONTEXT_PATH=auto below.
+ROOT_PATH=/exist/apps/tei-publisher
+# App context path: set to 'auto' if the app should be exposed under its full path 
+# (e.g. /exist/apps/tei-publisher)
+CONTEXT_PATH=""
 ```
 
 The `ROOT_PATH` variable specifies, which database URLs will be mapped to the root, in other words: what users will see if they access the root of the server (e.g. `http://localhost`). Using the setting above, users will be presented with the entry page of the TEI Publisher app. Other applications running on the database cannot be accessed.
@@ -170,7 +176,7 @@ If – for testing purposes – you would like to expose the entire database, se
 ```
 # Set to 'auto' if the app should be exposed under its full path (e.g. /exist/apps/tei-publisher)
 # use empty string if the app is mapped to the root of the server (see nginx config below)
-CONTEXT_PATH: "auto"
+CONTEXT_PATH=auto
 ```
 
 ## Certificate Renewal
@@ -217,3 +223,32 @@ If you would like to create regular backups of the data in your eXist-db:
    ```
    docker compose restart publisher
    ```
+
+## Using IIIF
+
+The included cantaloupe IIIF server reads images from a file system directory. By default this is mapped to the folder `iiif` in the same directory as the docker-compose configuration:
+
+```yaml
+volumes:
+   - ./iiif:/imageroot
+```
+
+To change the directory, replace the path before the ':'.
+
+To access cantaloupe's admin interface, edit [docker-compose.yml](docker-compose.yml), set `CANTALOUPE_ENDPOINT_ADMIN_ENABLED` to `true`, define a secret and enable the port mapping:
+
+```sh
+cantaloupe:
+    image: uclalibrary/cantaloupe:5.0.5-7
+    environment:
+      CANTALOUPE_ENDPOINT_ADMIN_ENABLED: false
+      CANTALOUPE_ENDPOINT_ADMIN_SECRET: my_admin_pass
+    volumes:
+      - ./iiif:/imageroot
+    # comment in to enable access to cantaloupe on port 8182, including admin interface
+    # ports:
+    #   - 8182:8182
+
+```
+
+The admin interface will be available at port 8182: http://localhost:8182/admin.

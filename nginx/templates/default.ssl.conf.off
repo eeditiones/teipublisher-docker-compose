@@ -21,4 +21,9 @@ server {
     proxy_cookie_path /exist /;
     client_max_body_size  512m;
   }
+
+  location /iiif {
+    proxy_pass http://docker-cantaloupe$request_uri;
+    proxy_redirect off;
+  }
 }
