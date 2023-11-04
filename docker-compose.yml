@@ -1,7 +1,7 @@
 services:
   publisher:
     build:
-      context: .
+      context: ${BUILD_CONTEXT:-.}
       # use one of the below instead if you want to build from an external git repository (needs a Dockerfile):
       # context: https://github.com/eeditiones/tei-publisher-app.git#master
       # if the repo is not public, you may need to provide an ACCESS_TOKEN (specify in .env)
@@ -58,6 +58,7 @@ services:
       - 443:443
     depends_on:
       - publisher
+      - cantaloupe
     # comment in to automatically restart:
     # restart: always
   certbot:
@@ -71,7 +72,7 @@ services:
       CANTALOUPE_ENDPOINT_ADMIN_ENABLED: false
       CANTALOUPE_ENDPOINT_ADMIN_SECRET: my_admin_pass
     volumes:
-      - ./iiif:/imageroot
+      - ${IIIF_IMAGES}:/imageroot
     # comment in to enable access to cantaloupe on port 8182, including admin interface
     # ports:
     #   - 8182:8182
