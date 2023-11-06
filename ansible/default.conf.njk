@@ -1,0 +1,20 @@
+
+{% for domain in domains %}
+# Configuration for {{domain.name}} using HTTP
+server {
+  listen 80;
+  listen [::]:80;
+
+  server_name {{domain.hostname}};
+  server_tokens off;
+
+  # Required by letsencrypt certbot to acquire certificate
+  location /.well-known/acme-challenge/ {
+      root /var/www/certbot;
+  }
+
+  location / {
+    return 301 https://{{domain.hostname}}$request_uri;
+  }
+}
+{% endfor %}

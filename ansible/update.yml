@@ -1,0 +1,25 @@
+- hosts: all
+  vars_files:
+    - ./variables.yml
+  tasks:
+    - name: Stop docker
+      ansible.builtin.shell:
+        cmd: docker compose down
+        chdir: "{{dest}}"
+    - name: Prune volumes
+      ansible.builtin.shell:
+        cmd: docker volume prune -a -f
+        chdir: "{{dest}}"
+    - name: Rebuild images
+      ansible.builtin.shell:
+        cmd: docker compose build --no-cache --pull
+        chdir: "{{dest}}"
+      environment:
+        BUILD_CONTEXT: "{{ publisher.build.context }}"
+        CONTEXT_PATH: "{{publisher.context_path}}"
+    - name: Start docker
+      ansible.builtin.shell:
+        cmd: docker compose up -d --force-recreate
+        chdir: "{{dest}}"
+      environment:
+        IIIF_IMAGES: "{{iiif.images}}"

@@ -1,0 +1,42 @@
+# path to directory in which the docker compose configuration will be installed
+dest: /root/docker
+# the domains to be served by the proxy. Each domain may map to a different app and root path
+# within the same eXist-db instance
+domains:
+  - name: publisher
+    # eXist-db path the root of the server will be mapped to. Specifying a path here
+    # will map the root to one single app. Change to empty string if you want to expose the
+    # entire database and also set CONTEXT_PATH=auto below.
+    root: /exist/apps/tei-publisher
+    # the name the server should listen to
+    hostname: workshop.teipublisher.com
+publisher:
+  build:
+    # directory or repository URL containing the Dockerfile to build publisher from
+    context: .
+    # use one of the below instead if you want to build from an external git repository (needs a Dockerfile):
+    # context: https://github.com/eeditiones/tei-publisher-app.git#master
+    # if the repo is not public, you may need to provide an ACCESS_TOKEN (specify in .env)
+    # context: https://${ACCESS_TOKEN_NAME}:${ACCESS_TOKEN_VALUE}@gitlab.com/xxx/xxx.git
+    libs:
+      templating: 1.1.0
+      publisher_lib: 4.0.0
+      roaster: 1.8.1
+  # list of apps to build. only relevant if context above is .
+  apps:
+    # Name of the custom app to include - should correspond to the name of the repository
+    - name: "tei-publisher-app"
+      # Tag or branch to build
+      tag_or_branch: "v8.0.0"
+      # GIT repository to clone the app from
+      repo: "https://github.com/eeditiones/tei-publisher-app.git"
+  # App context path: set to 'auto' if apps should be exposed under its full path 
+  # (e.g. /exist/apps/tei-publisher)
+  context_path: ""
+cert:
+  # should real SSL certificates be requested? set to true during testing to not hit limits
+  use_staging: false
+  # email address for notifications concerning SSL certificates
+  email: admin@jinntec.de
+iiif:
+  images: ./iiif

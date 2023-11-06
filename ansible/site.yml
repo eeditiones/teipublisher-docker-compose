@@ -1,0 +1,107 @@
+- name: Install
+  hosts: all
+  vars_files:
+    - ./variables.yml
+  tasks:
+    - name: Check for existing installation
+      ansible.builtin.stat:
+        path: "{{dest}}"
+      register: avail
+    - name: Stop docker
+      ansible.builtin.shell:
+        cmd: docker compose down
+        chdir: "{{dest}}"
+      when: avail.stat.isdir is defined and avail.stat.isdir
+    - name: Cleanup
+      when: avail.stat.isdir is defined and avail.stat.isdir
+      tags:
+        - clean
+      ansible.builtin.file:
+        path: "{{dest}}"
+        state: absent
+    - name: Create directory
+      ansible.builtin.file:
+        path: "{{dest}}/nginx/conf"
+        state: directory
+    - name: Copy files
+      ansible.builtin.copy:
+        src: '{{ item.src }}'
+        dest: '{{ item.dest }}'
+      loop:
+        - { src: ../nginx/conf/upstream.conf, dest: "{{dest}}/nginx/conf" }
+        - { src: ../.env, dest: "{{dest}}" }
+        - { src: ../docker-compose.yml, dest: "{{dest}}" }
+        - { src: ../certbot-renew.sh, dest: "{{dest}}" }
+      tags:
+        - copy
+    - name: Create Dockerfile
+      ansible.builtin.template:
+        src: Dockerfile.njk
+        dest: "{{dest}}/Dockerfile"
+    - name: Create nginx http config
+      ansible.builtin.template:
+        src: default.conf.njk
+        dest: "{{dest}}/nginx/conf/default.conf"
+    - name: Create nginx https config
+      ansible.builtin.template:
+        src: default.ssl.conf.njk
+        dest: "{{dest}}/nginx/conf/default.ssl.conf.off"
+    - name: Build docker images
+      ansible.builtin.shell:
+        cmd: docker compose build
+        chdir: "{{dest}}"
+      environment:
+        BUILD_CONTEXT: "{{ publisher.build.context }}"
+        CONTEXT_PATH: "{{publisher.context_path}}"
+    - name: Launch HTTP
+      ansible.builtin.shell:
+        cmd: docker compose up -d
+        chdir: "{{dest}}"
+      environment:
+        IIIF_IMAGES: "{{iiif.images}}"
+      tags:
+        - launch
+    - name: Acquire certificates
+      ansible.builtin.shell:
+        cmd: docker compose run --rm  certbot certonly {{"--test-cert" if cert.use_staging}} --webroot --webroot-path /var/www/certbot/ -n --agree-tos -m {{cert.email}} -d {{item.hostname}}
+        chdir: "{{dest}}"
+      loop: "{{domains}}"
+    - name: Enable HTTPS
+      ansible.builtin.copy:
+        src: "{{dest}}/nginx/conf/default.ssl.conf.off"
+        dest: "{{dest}}/nginx/conf/default.ssl.conf"
+        remote_src: true
+    - name: Restart frontend
+      ansible.builtin.shell:
+        cmd: docker compose restart frontend
+        chdir: "{{dest}}"
+    - name: Add cronjob for certificate renewal
+      ansible.builtin.cron:
+        name: "Renew certificate"
+        hour: "3"
+        minute: "0"
+        weekday: "1"
+        job: "{{dest}}/certbot-renew.sh"
+- name: Check services
+  hosts: all
+  vars_files:
+    - ./variables.yml
+  tasks:
+    - name: Display all variables/facts known for a host
+      ansible.builtin.debug:
+        var: hostvars[inventory_hostname]
+        verbosity: 4
+      tags:
+        - check
+    - name: Check if TEI Publisher responds
+      ansible.builtin.uri:
+        url: "https://{{item.hostname}}/doc/documentation.xml"
+        return_content: true
+      loop: "{{domains}}"
+      register: result
+      until: "result.status == 200"
+      retries: 5
+      delay: 10
+      failed_when: "'Documentation' not in result.content"
+      tags:
+        - check
