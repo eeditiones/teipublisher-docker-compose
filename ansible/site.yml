@@ -12,13 +12,14 @@
         cmd: docker compose down
         chdir: "{{dest}}"
       when: avail.stat.isdir is defined and avail.stat.isdir
-    - name: Cleanup
+      ignore_errors: true
+    - name: Remove existing directory
       when: avail.stat.isdir is defined and avail.stat.isdir
-      tags:
-        - clean
       ansible.builtin.file:
         path: "{{dest}}"
         state: absent
+      tags:
+        - clean
     - name: Create directory
       ansible.builtin.file:
         path: "{{dest}}/nginx/conf"
@@ -34,10 +35,21 @@
         - { src: ../certbot-renew.sh, dest: "{{dest}}" }
       tags:
         - copy
-    - name: Create Dockerfile
-      ansible.builtin.template:
-        src: Dockerfile.njk
-        dest: "{{dest}}/Dockerfile"
+    - name: Generate Dockerfile
+      block:
+        - name: Generate Dockerfile from template
+          ansible.builtin.template:
+            src: Dockerfile.njk
+            dest: "{{dest}}/Dockerfile"
+          tags:
+            - dockerfile
+        - name: Fetch Dockerfile for local use
+          ansible.builtin.fetch:
+            src: "{{dest}}/Dockerfile"
+            dest: "Dockerfile.generated"
+            flat: true
+      tags:
+        - dockerfile
     - name: Create nginx http config
       ansible.builtin.template:
         src: default.conf.njk
@@ -66,6 +78,8 @@
         cmd: docker compose run --rm  certbot certonly {{"--test-cert" if cert.use_staging}} --webroot --webroot-path /var/www/certbot/ -n --agree-tos -m {{cert.email}} -d {{item.hostname}}
         chdir: "{{dest}}"
       loop: "{{domains}}"
+      tags:
+        - cert
     - name: Enable HTTPS
       ansible.builtin.copy:
         src: "{{dest}}/nginx/conf/default.ssl.conf.off"
@@ -87,21 +101,14 @@
   vars_files:
     - ./variables.yml
   tasks:
-    - name: Display all variables/facts known for a host
-      ansible.builtin.debug:
-        var: hostvars[inventory_hostname]
-        verbosity: 4
-      tags:
-        - check
-    - name: Check if TEI Publisher responds
+    - name: Check if hosts respond
       ansible.builtin.uri:
-        url: "https://{{item.hostname}}/doc/documentation.xml"
-        return_content: true
+        url: "https://{{item.hostname}}/index.html"
+        return_content: false
       loop: "{{domains}}"
       register: result
       until: "result.status == 200"
       retries: 5
       delay: 10
-      failed_when: "'Documentation' not in result.content"
       tags:
         - check
