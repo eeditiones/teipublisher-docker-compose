@@ -38,18 +38,16 @@
     - name: Generate Dockerfile
       block:
         - name: Generate Dockerfile from template
+          connection: local
           ansible.builtin.template:
             src: Dockerfile.njk
-            dest: "{{dest}}/Dockerfile"
+            dest: "{{playbook_dir}}/Dockerfile.generated"
           tags:
             - dockerfile
-        - name: Fetch Dockerfile for local use
-          ansible.builtin.fetch:
-            src: "{{dest}}/Dockerfile"
-            dest: "Dockerfile.generated"
-            flat: true
-      tags:
-        - dockerfile
+        - name: Copy Dockerfile to server
+          ansible.builtin.copy:
+            src: "{{playbook_dir}}/Dockerfile.generated"
+            dest: "{{dest}}/Dockerfile"
     - name: Create nginx http config
       ansible.builtin.template:
         src: default.conf.njk
