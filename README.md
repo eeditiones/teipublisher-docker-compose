@@ -262,13 +262,13 @@ The admin interface will be available at port 8182: http://localhost:8182/admin.
 
 # Ansible setup
 
-[Ansible](https://docs.ansible.com/) is an automation framework for managing servers. It uses an ssh connection between the controlling machine and the server to automatically work through a sequence of setup tasks (the ~playbook~). Benefits:
+[Ansible](https://docs.ansible.com/) is an automation framework for managing servers. It uses an ssh connection between the controlling machine and the server to automatically work through a sequence of setup tasks (the **playbook**). Benefits:
 
 * no manual steps required
 * you can rebuild the same setup any time on the same or different target machines
 * we can create more complex setups, i.e. multiple applications running on the same eXist-db database, each accessible through its own domain name. For example, you could expose app1 under https://app1.com and app2 under https://app2.com.
 
-The obvious downside is that you need ansible installed. Check the [official documentation](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible) for instructions.
+The obvious downside is that you need ansible installed on your local machine. Check the [official documentation](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible) for instructions.
 
 Once you have ansible (check if you can execute the command `ansible-playbook`), clone this repository to your local machine (in ansible terms called **the control node**) and change into the `ansible` subdirectory.
 
@@ -287,7 +287,7 @@ Next open [ansible/variables.yml](ansible/variables.yml) to specify the apps to 
 
 ## Define the apps to be built
 
-The first setting to pay attention to is the list of apps to built:
+The first setting to pay attention to is the list of apps to built into your docker image:
 
 ```yaml
 # list of apps to build. only relevant if context above is .
@@ -310,6 +310,8 @@ publisher:
     # directory or repository URL containing the Dockerfile to build from
    context: https://github.com/eeditiones/tei-publisher-app.git#master
 ```
+
+In this case you do not need to touch the list of apps to be built as it will be ignored.
 
 ## Map application paths to server domains
 
@@ -342,7 +344,7 @@ ansible-playbook -i hosts site.yml
 
 **Note**: the generated Dockerfile will be saved to `ansible/Dockerfile.generated`. If you would like to use it for local testing, replace the `Dockerfile` in the parent directory with this one. You can then test on your local machine as described [above](#simple-setup).
 
-## Updating everything
+## Update
 
 If you wish to update all apps to newer versions, call
 
@@ -351,3 +353,13 @@ ansible-playbook -i hosts update.yml
 ```
 
 **Note** that this will explicitely remove any data added to the database by users and rebuild the docker image!
+
+## Rebuild
+
+To rebuild everything without having to renew the SSL certificate, call
+
+```sh
+ansible-playbook -i hosts --skip-tags clean,cert site.yml
+```
+
+This will prevent the existing directory from being removed and leaves the SSL certificate untouched. The docker and nginx configurations will still be recreated.

@@ -1,4 +1,5 @@
 - hosts: all
+  # Rebuilds everything on the host using the existing Dockerfile and setup
   vars_files:
     - ./variables.yml
   tasks:
