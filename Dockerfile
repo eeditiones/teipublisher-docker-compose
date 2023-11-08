@@ -85,6 +85,8 @@ ARG CONTEXT_PATH=auto
 ARG NER_ENDPOINT=http://localhost:8001
 ARG PROXY_CACHING=false
 
+RUN ["busybox", "sed", "-i", "s/<lock-table disabled=\"false\"/<lock-table disabled=\"true\"/", "etc/conf.xml"]
+
 ENV JAVA_TOOL_OPTIONS \
   -Dfile.encoding=UTF8 \
   -Dsun.jnu.encoding=UTF-8 \
