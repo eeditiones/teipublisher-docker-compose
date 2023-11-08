@@ -67,12 +67,14 @@ services:
       - ./certbot/www/:/var/www/certbot/:rw
       - ./certbot/conf/:/etc/letsencrypt/:rw
   cantaloupe:
-    image: uclalibrary/cantaloupe:5.0.5-7
+    image: islandora/cantaloupe:2.0.10
     environment:
+      CANTALOUPE_FILESYSTEMSOURCE_BASICLOOKUPSTRATEGY_PATH_PREFIX: /images/
+      CANTALOUPE_SOURCE_STATIC: FilesystemSource
       CANTALOUPE_ENDPOINT_ADMIN_ENABLED: false
       CANTALOUPE_ENDPOINT_ADMIN_SECRET: my_admin_pass
     volumes:
-      - ${IIIF_IMAGES}:/imageroot
+      - ${IIIF_IMAGES}:/images
     # comment in to enable access to cantaloupe on port 8182, including admin interface
-    # ports:
-    #   - 8182:8182
+    ports:
+      - 8182:8182
