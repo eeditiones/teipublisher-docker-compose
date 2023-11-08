@@ -15,7 +15,7 @@ The following services are configured by the [docker-compose](docker-compose.yml
 In this repository we provide two ways to set up and configure a server:
 
 1. **simple setup**: ideal for local testing or projects which need to build and expose a single application. Installing a server involves a few manual steps like copying files and running a command.
-2. **ansible**: fully-automated setup without manual steps. Also suited for projects serving multiple applications, optionally under different domain names. More information can be found [below](#ansible)
+2. **ansible**: fully-automated setup without manual steps. Also suited for projects serving multiple applications, optionally under different domain names. More information can be found [below](#ansible-setup).
 
 # Simple setup
 
