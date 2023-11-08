@@ -363,3 +363,17 @@ ansible-playbook -i hosts --skip-tags clean,cert site.yml
 ```
 
 This will prevent the existing directory from being removed and leaves the SSL certificate untouched. The docker and nginx configurations will still be recreated.
+
+## Other commands
+
+Run checks only:
+
+```sh
+ansible-playbook -i hosts --tags check site.yml
+```
+
+(Re-)generate Dockerfile locally:
+
+```sh
+ansible-playbook -i hosts --tags dockerfile site.yml
+```

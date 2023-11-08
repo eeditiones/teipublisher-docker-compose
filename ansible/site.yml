@@ -39,6 +39,7 @@
         - { src: ../.env, dest: "{{dest}}" }
         - { src: ../docker-compose.yml, dest: "{{dest}}" }
         - { src: ../certbot-renew.sh, dest: "{{dest}}" }
+        - { src: ../iiif, dest: "{{dest}}" }
       tags:
         - copy
     - name: Generate Dockerfile
@@ -108,6 +109,17 @@
     - name: Check if hosts respond
       ansible.builtin.uri:
         url: "https://{{item.hostname}}/index.html"
+        return_content: false
+      loop: "{{domains}}"
+      register: result
+      until: "result.status == 200"
+      retries: 5
+      delay: 10
+      tags:
+        - check
+    - name: Check if IIIF service responds
+      ansible.builtin.uri:
+        url: "https://{{item.hostname}}/iiif/2/test.tif/info.json"
         return_content: false
       loop: "{{domains}}"
       register: result
