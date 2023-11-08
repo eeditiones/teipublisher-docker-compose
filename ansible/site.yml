@@ -13,6 +13,12 @@
         chdir: "{{dest}}"
       when: avail.stat.isdir is defined and avail.stat.isdir
       ignore_errors: true
+    - name: Prune volumes
+      ansible.builtin.shell:
+        cmd: docker volume prune -a -f
+        chdir: "{{dest}}"
+      when: avail.stat.isdir is defined and avail.stat.isdir
+      ignore_errors: true
     - name: Remove existing directory
       when: avail.stat.isdir is defined and avail.stat.isdir
       ansible.builtin.file:
