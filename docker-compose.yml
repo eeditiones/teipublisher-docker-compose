@@ -21,7 +21,7 @@ services:
         CONTEXT_PATH: ${CONTEXT_PATH:-}
         PROXY_CACHING: false
     # comment in to automatically restart:
-    # restart: always
+    restart: always
     volumes:
       # database files will be stored in a volume to avoid data loss
       # when the service is updated
@@ -38,7 +38,7 @@ services:
     #   context: https://github.com/eeditiones/tei-publisher-ner.git#master
     #   dockerfile: Dockerfile
     # comment in to automatically restart:
-    # restart: always
+    restart: always
   frontend:
     image: nginx:alpine
     environment:
@@ -60,7 +60,7 @@ services:
       - publisher
       - cantaloupe
     # comment in to automatically restart:
-    # restart: always
+    restart: always
   certbot:
     image: certbot/certbot:latest
     volumes:
@@ -75,6 +75,7 @@ services:
       CANTALOUPE_ENDPOINT_ADMIN_SECRET: my_admin_pass
     volumes:
       - ${IIIF_IMAGES}:/images
+    restart: always
     # comment in to enable access to cantaloupe on port 8182, including admin interface
     ports:
       - 8182:8182
