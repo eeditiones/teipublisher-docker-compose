@@ -60,7 +60,10 @@ RUN  git clone {{app.repo}} \
     && echo Checking out {{app.tag_or_branch}} \
     && git checkout {{app.tag_or_branch}} \
     {% endif %}
-    && ant
+    {% if app.local_webcomponents %}
+    && sed -i 's/$config:webcomponents :=.*;/$config:webcomponents := "local";/' modules/config.xqm \
+    {% endif %}
+    && ant {% if app.local_webcomponents %}xar-local{% endif %}
 {% endfor %}
 
 RUN curl -L -o /tmp/roaster-${ROUTER_VERSION}.xar http://exist-db.org/exist/apps/public-repo/public/roaster-${ROUTER_VERSION}.xar

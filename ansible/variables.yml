@@ -37,6 +37,8 @@ publisher:
       tag_or_branch: "v8.0.0"
       # GIT repository to clone the app from
       repo: "https://github.com/eeditiones/tei-publisher-app.git"
+      # enable to embed webcomponents in the app instead of using external CDN
+      local_webcomponents: true
   # App context path: set to 'auto' if apps should be exposed under its full path 
   # (e.g. /exist/apps/tei-publisher)
   context_path: ""
