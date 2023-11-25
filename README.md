@@ -334,6 +334,19 @@ The `name` can be any internal name used to identify the mapping. `root` should 
 
 The ansible playbook will automatically try to register an SSL certificate for each domain. This service has rate limits, so if you hit it too often during testing, you'll be blocked for a while. To prevent this, set the variable `use_staging` in the `cert` section to `true`. This means your SSL certificates won't be valid and your browser will complain, but you can test out if the process runs through properly.
 
+## Enabling/disabling services
+
+By default the generated configuration will also start the IIIF image service and the Named Entity Recognition service. If you don't need those, disable them in the `services` section:
+
+```yaml
+# which optional services should be started?
+services:
+  # IIIF image service
+  iiif: false
+  # Named entity recognition
+  ner: true
+```
+
 ## Run ansible
 
 Once you are done editing the configuration, launch the ansible playbook with the following command:
@@ -341,6 +354,8 @@ Once you are done editing the configuration, launch the ansible playbook with th
 ```sh
 ansible-playbook -i hosts site.yml
 ```
+
+You will be prompted to specify a password for the eXist-db admin user. Choosing a strong admin password is highly recommended.
 
 **Note**: the generated Dockerfile will be saved to `ansible/Dockerfile.generated`. If you would like to use it for local testing, replace the `Dockerfile` in the parent directory with this one. You can then test on your local machine as described [above](#simple-setup).
 

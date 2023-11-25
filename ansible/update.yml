@@ -2,6 +2,10 @@
   # Rebuilds everything on the host using the existing Dockerfile and setup
   vars_files:
     - ./variables.yml
+  vars_prompt:
+    - name: admin_pass
+      prompt: Provide a password for the eXist-db admin user
+      default: ""
   tasks:
     - name: Stop docker
       ansible.builtin.shell:
@@ -24,3 +28,20 @@
         chdir: "{{dest}}"
       environment:
         IIIF_IMAGES: "{{iiif.images}}"
+    - name: Wait for eXist-db
+      ansible.builtin.shell:
+        cmd: docker compose exec publisher java org.exist.start.Main client -x 'system:get-version()'
+        chdir: "{{dest}}"
+      register: result
+      until: result.rc == 0
+      retries: 5
+      delay: 10
+      tags:
+        - password
+    - name: Set admin password
+      ansible.builtin.shell:
+        cmd: docker compose exec publisher java org.exist.start.Main client -x 'sm:passwd("admin", "{{admin.password}}")'
+        chdir: "{{dest}}"
+      when: admin.password is defined and admin.password != ''
+      tags:
+        - password

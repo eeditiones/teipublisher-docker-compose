@@ -1,4 +1,4 @@
 certbot
 nginx/conf/default.*
 nginx/conf/localhost.*
-ansible/Dockerfile.generated
+ansible/*.generated

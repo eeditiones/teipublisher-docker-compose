@@ -1,0 +1,91 @@
+services:
+  publisher:
+    build:
+      context: ${BUILD_CONTEXT:-.}
+      # use one of the below instead if you want to build from an external git repository (needs a Dockerfile):
+      # context: https://github.com/eeditiones/tei-publisher-app.git#master
+      # if the repo is not public, you may need to provide an ACCESS_TOKEN (specify in .env)
+      # context: https://${ACCESS_TOKEN_NAME}:${ACCESS_TOKEN_VALUE}@gitlab.com/xxx/xxx.git
+      dockerfile: Dockerfile
+      args:
+        # Name of the custom app to include - should correspond to the name of the repository
+        APP_NAME: ${APP_NAME:-tei-publisher}
+        # Tag or branch to build
+        APP_TAG_OR_BRANCH: ${APP_TAG_OR_BRANCH:-v8.0.0}
+        # GIT repository to clone the app from
+        APP_REPO: ${APP_REPO:-https://github.com/eeditiones/tei-publisher-app.git}
+        # Endpoint for the named entity recognition service.
+        NER_ENDPOINT: http://ner:8001
+        # Set to 'auto' if the app should be exposed under its full path (e.g. /exist/apps/tei-publisher)
+        # use empty string if the app is mapped to the root of the server (see nginx config below)
+        CONTEXT_PATH: ${CONTEXT_PATH:-}
+        PROXY_CACHING: false
+    # comment in to automatically restart:
+    restart: always
+    volumes:
+      # database files will be stored in a volume to avoid data loss
+      # when the service is updated
+      - /exist/data
+      # uncomment to map eXist-db backups to local directory
+      # - ./backup:/exist/backup
+    ports:
+      - 127.0.0.1:8080:8080
+{% if services.ner %}
+    depends_on:
+      - ner
+{% endif %}
+{% if services.ner %}
+  ner:
+    # image will be pulled from github
+    image: ghcr.io/eeditiones/tei-publisher-ner/teipublisher-ner:master
+    # enable if you want to build from source:
+    # build:
+    #   context: https://github.com/eeditiones/tei-publisher-ner.git#master
+    #   dockerfile: Dockerfile
+    # comment in to automatically restart:
+    restart: always
+{% endif %}
+  frontend:
+    image: nginx:alpine
+    environment:
+      # eXist-db path the root of the server will be mapped to
+      # should point to the app path if CONTEXT_PATH is empty (see above)
+      # or the empty string otherwise
+      ROOT_PATH: ${ROOT_PATH:-/exist/apps/tei-publisher}
+      # Name of the server - irrelevant on localhost
+      SERVER_NAME: ${SERVER_NAME:-example.com}
+    volumes:
+      - ./nginx/conf/:/etc/nginx/conf.d/:rw
+      - ./nginx/templates:/etc/nginx/templates/:ro
+      - ./certbot/www:/var/www/certbot/:ro
+      - ./certbot/conf/:/etc/nginx/ssl/:ro
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - publisher
+{% if services.iiif %}
+      - cantaloupe
+{% endif %}
+    # comment in to automatically restart:
+    restart: always
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./certbot/www/:/var/www/certbot/:rw
+      - ./certbot/conf/:/etc/letsencrypt/:rw
+{% if services.iiif %}
+  cantaloupe:
+    image: islandora/cantaloupe:2.0.10
+    environment:
+      CANTALOUPE_FILESYSTEMSOURCE_BASICLOOKUPSTRATEGY_PATH_PREFIX: /images/
+      CANTALOUPE_SOURCE_STATIC: FilesystemSource
+      CANTALOUPE_ENDPOINT_ADMIN_ENABLED: false
+      CANTALOUPE_ENDPOINT_ADMIN_SECRET: my_admin_pass
+    volumes:
+      - ${IIIF_IMAGES}:/images
+    restart: always
+    # comment in to enable access to cantaloupe on port 8182, including admin interface
+    # ports:
+    #   - 8182:8182
+{% endif %}

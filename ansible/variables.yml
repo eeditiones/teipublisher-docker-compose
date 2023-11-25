@@ -1,15 +1,22 @@
 # path to directory in which the docker compose configuration will be installed
 dest: /root/docker
+# which optional services should be started?
+services:
+  # IIIF image service
+  iiif: true
+  # Named entity recognition
+  ner: true
 # the domains to be served by the proxy. Each domain may map to a different app and root path
 # within the same eXist-db instance
 domains:
   - name: publisher
     # eXist-db path the root of the server will be mapped to. Specifying a path here
-    # will map the root to one single app. Change to empty string if you want to expose the
+    # will map the root to one single app. Change to empty string ("") if you want to expose the
     # entire database and also set CONTEXT_PATH=auto below.
     root: /exist/apps/tei-publisher
+    # root: ""
     # the name the server should listen to
-    hostname: workshop.teipublisher.com
+    hostname: dev.tei-publisher.com
 publisher:
   build:
     # directory or repository URL containing the Dockerfile to build publisher from

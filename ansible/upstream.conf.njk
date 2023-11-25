@@ -1,0 +1,9 @@
+upstream docker-publisher {
+  server publisher:8080 fail_timeout=0;
+}
+
+{% if services.iiif %}
+upstream docker-cantaloupe {
+  server cantaloupe:8182 fail_timeout=0;
+}
+{% endif %}

@@ -2,6 +2,10 @@
   hosts: all
   vars_files:
     - ./variables.yml
+  vars_prompt:
+    - name: admin_pass
+      prompt: Provide a password for the eXist-db admin user
+      default: ""
   tasks:
     - name: Check for existing installation
       ansible.builtin.stat:
@@ -37,47 +41,69 @@
       loop:
         - { src: ../nginx/conf/upstream.conf, dest: "{{dest}}/nginx/conf" }
         - { src: ../.env, dest: "{{dest}}" }
-        - { src: ../docker-compose.yml, dest: "{{dest}}" }
         - { src: ../certbot-renew.sh, dest: "{{dest}}" }
         - { src: ../iiif, dest: "{{dest}}" }
       tags:
         - copy
-    - name: Generate Dockerfile
+    - name: Generate Dockerfile and docker-compose.yml
       block:
-        - name: Generate Dockerfile from template
+        - name: Generate Dockerfile and docker-compose.yml from template
           connection: local
           ansible.builtin.template:
-            src: Dockerfile.njk
-            dest: "{{playbook_dir}}/Dockerfile.generated"
-          tags:
-            - dockerfile
-        - name: Copy Dockerfile to server
+            src: "{{ item.src }}"
+            dest: "{{ item.dest }}"
+          loop:
+            - { src: Dockerfile.njk, dest: "{{playbook_dir}}/Dockerfile.generated" }
+            - { src: docker-compose.yml.njk, dest: "{{playbook_dir}}/docker-compose.yml.generated"}
+        - name: Copy generated files to server
           ansible.builtin.copy:
-            src: "{{playbook_dir}}/Dockerfile.generated"
-            dest: "{{dest}}/Dockerfile"
-    - name: Create nginx http config
+            src: "{{ item.src }}"
+            dest: "{{ item.dest }}"
+          loop:
+            - { src: "{{playbook_dir}}/Dockerfile.generated", dest: "{{dest}}/Dockerfile" }
+            - { src: "{{playbook_dir}}/docker-compose.yml.generated", dest: "{{dest}}/docker-compose.yml" }
+    - name: Create nginx configs
       ansible.builtin.template:
-        src: default.conf.njk
-        dest: "{{dest}}/nginx/conf/default.conf"
-    - name: Create nginx https config
-      ansible.builtin.template:
-        src: default.ssl.conf.njk
-        dest: "{{dest}}/nginx/conf/default.ssl.conf.off"
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+      loop:
+        - { src: upstream.conf.njk, dest: "{{dest}}/nginx/conf/upstream.conf" }
+        - { src: default.conf.njk, dest: "{{dest}}/nginx/conf/default.conf" }
+        - { src: default.ssl.conf.njk, dest: "{{dest}}/nginx/conf/default.ssl.conf.off" }
+      tags:
+        - frontend
     - name: Build docker images
       ansible.builtin.shell:
-        cmd: docker compose build
+        cmd: docker compose build --no-cache --pull
         chdir: "{{dest}}"
       environment:
         BUILD_CONTEXT: "{{ publisher.build.context }}"
         CONTEXT_PATH: "{{publisher.context_path}}"
     - name: Launch HTTP
       ansible.builtin.shell:
-        cmd: docker compose up -d
+        cmd: docker compose up -d --force-recreate
         chdir: "{{dest}}"
       environment:
         IIIF_IMAGES: "{{iiif.images}}"
       tags:
         - launch
+    - name: Wait for eXist-db
+      ansible.builtin.shell:
+        cmd: docker compose exec publisher java org.exist.start.Main client -x 'system:get-version()'
+        chdir: "{{dest}}"
+      register: result
+      until: result.rc == 0
+      retries: 5
+      delay: 10
+      tags:
+        - password
+    - name: Set admin password
+      ansible.builtin.shell:
+        cmd: docker compose exec publisher java org.exist.start.Main client -x 'sm:passwd("admin", "{{admin.password}}")'
+        chdir: "{{dest}}"
+      when: admin.password is defined and admin.password != ''
+      tags:
+        - password
     - name: Acquire certificates
       ansible.builtin.shell:
         cmd: docker compose run --rm  certbot certonly {{"--test-cert" if cert.use_staging}} --webroot --webroot-path /var/www/certbot/ -n --agree-tos -m {{cert.email}} -d {{item.hostname}}
@@ -121,6 +147,7 @@
       ansible.builtin.uri:
         url: "https://{{item.hostname}}/iiif/2/test.tif/info.json"
         return_content: false
+      when: services.iiif
       loop: "{{domains}}"
       register: result
       until: "result.status == 200"
