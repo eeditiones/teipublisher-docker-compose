@@ -4,7 +4,7 @@ FROM openjdk:8-jdk-slim as builder
 USER root
 
 ENV NODE_MAJOR 20
-ENV ANT_VERSION 1.10.13
+ENV ANT_VERSION 1.10.14
 ENV ANT_HOME /etc/ant-${ANT_VERSION}
 
 WORKDIR /tmp
@@ -21,7 +21,7 @@ RUN mkdir -p /etc/apt/keyrings && \
     apt-get update && \
     apt-get install nodejs -y
 
-RUN curl -L -o apache-ant-${ANT_VERSION}-bin.tar.gz http://www.apache.org/dist/ant/binaries/apache-ant-${ANT_VERSION}-bin.tar.gz \
+RUN curl -L -o apache-ant-${ANT_VERSION}-bin.tar.gz https://downloads.apache.org/ant/binaries/apache-ant-${ANT_VERSION}-bin.tar.gz \
     && mkdir ant-${ANT_VERSION} \
     && tar -zxvf apache-ant-${ANT_VERSION}-bin.tar.gz \
     && mv apache-ant-${ANT_VERSION} ${ANT_HOME} \
@@ -52,18 +52,22 @@ RUN if [ "${PUBLISHER_LIB_VERSION}" = "master" ]; then \
     fi
 
 {% for app in publisher.apps %}
-# Build the main app configured in the docker-compose.yml
 RUN  git clone {{app.repo}} \
-    # replace my-edition with name of your app
     && cd {{app.name}} \
-    {% if app.tag_or_branch %}
+    {% if app.tag_or_branch is defined and app.tag_or_branch %}
     && echo Checking out {{app.tag_or_branch}} \
     && git checkout {{app.tag_or_branch}} \
     {% endif %}
-    {% if app.local_webcomponents %}
+    {% if app.local_webcomponents is defined and app.local_webcomponents %}
     && sed -i 's/$config:webcomponents :=.*;/$config:webcomponents := "local";/' modules/config.xqm \
     {% endif %}
-    && ant {% if app.local_webcomponents %}xar-local{% endif %}
+    {% if app.prebuild is defined %}
+    && {{ app.prebuild }} \
+    {% endif %}
+    && ant {% if app.local_webcomponents is defined and app.local_webcomponents %}xar-local{% endif %}
+    {% raw %}
+
+    {% endraw %}
 {% endfor %}
 
 RUN curl -L -o /tmp/roaster-${ROUTER_VERSION}.xar http://exist-db.org/exist/apps/public-repo/public/roaster-${ROUTER_VERSION}.xar
