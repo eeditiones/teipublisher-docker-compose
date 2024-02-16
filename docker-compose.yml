@@ -19,7 +19,7 @@ services:
         # Set to 'auto' if the app should be exposed under its full path (e.g. /exist/apps/tei-publisher)
         # use empty string if the app is mapped to the root of the server (see nginx config below)
         CONTEXT_PATH: ${CONTEXT_PATH:-}
-        PROXY_CACHING: false
+        PROXY_CACHING: 
     # comment in to automatically restart:
     restart: always
     volumes:
@@ -71,7 +71,7 @@ services:
     environment:
       CANTALOUPE_FILESYSTEMSOURCE_BASICLOOKUPSTRATEGY_PATH_PREFIX: /images/
       CANTALOUPE_SOURCE_STATIC: FilesystemSource
-      CANTALOUPE_ENDPOINT_ADMIN_ENABLED: false
+      CANTALOUPE_ENDPOINT_ADMIN_ENABLED: 
       CANTALOUPE_ENDPOINT_ADMIN_SECRET: my_admin_pass
     volumes:
       - ${IIIF_IMAGES}:/images

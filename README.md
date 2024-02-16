@@ -26,7 +26,7 @@ Clone this repository to either your local machine or a server you are installin
 By default, the compose configuration will launch the proxy on port 80 of the local host, serving only http, not https. This configuration is intended for testing, not for deployment on a public facing server. To start the services on localhost using the default configuration, run:
 
 ```sh
-docker compose up -d --build
+docker-compose up -d --build
 ```
 
 Afterwards you should be able to access TEI Publisher using http://localhost. The cantaloupe IIIF service will be mapped to the path `/iiif`, so for testing try: http://localhost/iiif/2/test.tif/full/full/0/default.jpg. See [below](#using-iiif) for more information.
@@ -34,7 +34,7 @@ Afterwards you should be able to access TEI Publisher using http://localhost. Th
 To stop the services again, call:
 
 ```sh
-docker compose down
+docker-compose down
 ```
 
 ## Customize the docker image
