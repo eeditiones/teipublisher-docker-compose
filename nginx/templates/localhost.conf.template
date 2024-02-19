@@ -1,5 +1,17 @@
 # Default configuration for TEI Publisher running on localhost
 # Just http, no https
+
+# page_cache should be large enough to accomodate all keys and should correlate with max_size
+proxy_cache_path /var/cache/nginx levels=1:2 keys_zone=page_cache:512m max_size=1g use_temp_path=off inactive=60m;
+
+map $args $filtered_args {
+  default "";
+  ~^(.*&)?(root=[^&]*|id=[^&]*|odd=[^&]*)(?:&.*)?$ $2;
+}
+
+gzip on;
+gzip_disable "MSIE [1-6]\.";
+
 server {
   listen 80;
   listen [::]:80;
@@ -11,8 +23,34 @@ server {
     proxy_set_header   X-Real-IP $remote_addr;
     proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header   X-Forwarded-Host $server_name;
+    proxy_read_timeout 5m; # wait max 5 minutes for database to respond
     proxy_cookie_path /exist /;
     client_max_body_size  512m;
+  }
+
+  location ^~ /api/parts {
+    proxy_pass http://docker-publisher${ROOT_PATH}$request_uri;
+    proxy_redirect http://$host${ROOT_PATH}/ /;
+    proxy_set_header   Host $host;
+    proxy_set_header   X-Real-IP $remote_addr;
+    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header   X-Forwarded-Host $server_name;
+    proxy_read_timeout 5m; # wait max 5 minutes for database to respond
+    proxy_cookie_path /exist /;
+    client_max_body_size  512m;
+
+    expires 5m; # time for client to recheck
+    proxy_cache_key "$scheme$request_method$host$request_uri$arg_root$arg_odd$arg_id";
+    proxy_cache page_cache;
+    proxy_cache_valid any 5m;
+    proxy_cache_valid 400 401 0m;
+    proxy_cache_valid 200 301 302 304 1m;
+    proxy_cache_lock on; # concurrent requests will be serialized
+    proxy_cache_min_uses 1;
+    proxy_cache_revalidate on;
+    proxy_ignore_headers Set-Cookie Cache-Control Vary;
+    proxy_cache_use_stale error timeout invalid_header updating http_500 http_502 http_503 http_504;
+    add_header X-Proxy-Cache $upstream_cache_status;
   }
 
   location /iiif {

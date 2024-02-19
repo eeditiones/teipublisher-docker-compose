@@ -19,7 +19,7 @@ services:
         # Set to 'auto' if the app should be exposed under its full path (e.g. /exist/apps/tei-publisher)
         # use empty string if the app is mapped to the root of the server (see nginx config below)
         CONTEXT_PATH: ${CONTEXT_PATH:-}
-        PROXY_CACHING: false
+        PROXY_CACHING: true
     # comment in to automatically restart:
     restart: always
     volumes:
@@ -28,6 +28,8 @@ services:
       - /exist/data
       # uncomment to map eXist-db backups to local directory
       # - ./backup:/exist/backup
+    ports:
+      - 8080:8080
     depends_on:
       - ner
   ner:
