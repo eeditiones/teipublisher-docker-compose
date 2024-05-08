@@ -361,7 +361,7 @@ You will be prompted to specify a password for the eXist-db admin user. Choosing
 
 ## Update
 
-If you wish to update all apps to newer versions, call
+If you wish to update all apps to newer versions, but leave the generated docker and nginx configurations untouched, call
 
 ```sh
 ansible-playbook -i hosts update.yml

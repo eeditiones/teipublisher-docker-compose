@@ -91,7 +91,7 @@ ARG HTTPS_PORT=8443
 
 ARG CONTEXT_PATH=auto
 ARG NER_ENDPOINT=http://localhost:8001
-ARG PROXY_CACHING=false
+ARG PROXY_CACHING={{ publisher.caching_support }}
 
 ENV JAVA_TOOL_OPTIONS \
   -Dfile.encoding=UTF8 \

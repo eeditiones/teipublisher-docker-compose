@@ -45,3 +45,4 @@
       when: admin.password is defined and admin.password != ''
       tags:
         - password
+    - import_tasks: check.yml

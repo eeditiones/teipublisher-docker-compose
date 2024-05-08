@@ -127,31 +127,4 @@
         minute: "0"
         weekday: "1"
         job: "{{dest}}/certbot-renew.sh"
-- name: Check services
-  hosts: all
-  vars_files:
-    - ./variables.yml
-  tasks:
-    - name: Check if hosts respond
-      ansible.builtin.uri:
-        url: "https://{{item.hostname}}/index.html"
-        return_content: false
-      loop: "{{domains}}"
-      register: result
-      until: "result.status == 200"
-      retries: 5
-      delay: 10
-      tags:
-        - check
-    - name: Check if IIIF service responds
-      ansible.builtin.uri:
-        url: "https://{{item.hostname}}/iiif/2/test.tif/info.json"
-        return_content: false
-      when: services.iiif
-      loop: "{{domains}}"
-      register: result
-      until: "result.status == 200"
-      retries: 5
-      delay: 10
-      tags:
-        - check
+    - import_tasks: check.yml

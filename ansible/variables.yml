@@ -12,11 +12,24 @@ domains:
   - name: publisher
     # eXist-db path the root of the server will be mapped to. Specifying a path here
     # will map the root to one single app. Change to empty string ("") if you want to expose the
-    # entire database and also set CONTEXT_PATH=auto below.
-    root: /exist/apps/tei-publisher
-    # root: ""
+    # entire database and also set `context_path: auto` below.
+    # root: /exist/apps/tei-publisher
+    root: ""
     # the name the server should listen to
     hostname: dev.tei-publisher.com
+    # settings for the proxy cache. If enabled, requests to content in reading view will be cached
+    # unless they have been changed. To detect changes, you must set `caching_support: true` in the
+    # publisher section below.
+    #
+    # In addition you may want to cache other requests by adding them to the list in `urls`. Those
+    # requests will be statically cached for the duration specified in `expires`.
+    cache:
+      # enable caching
+      enable: true
+      urls:
+        # cache pdf, epub, print HTML output in test and doc collections
+        - /api/document/(test|doc|jats).*/(pdf|epub|print|tex)$
+      expires: 1d
 publisher:
   build:
     # directory or repository URL containing the Dockerfile to build publisher from
@@ -34,14 +47,17 @@ publisher:
     # Name of the custom app to include - should correspond to the name of the repository
     - name: "tei-publisher-app"
       # Tag or branch to build
-      tag_or_branch: "v8.0.0"
+      tag_or_branch: "v9.0.0"
       # GIT repository to clone the app from
       repo: "https://github.com/eeditiones/tei-publisher-app.git"
       # enable to embed webcomponents in the app instead of using external CDN
       local_webcomponents: true
-  # App context path: set to 'auto' if apps should be exposed under its full path 
+  # App context path: set to 'auto' if apps should be exposed under their full path 
   # (e.g. /exist/apps/tei-publisher)
-  context_path: ""
+  context_path: "auto"
+  # support cache revalidation: if set, TEI Publisher will respond to the If-Modified-Since header.
+  # needed if you enable caching in the proxy section above.
+  caching_support: true
 cert:
   # should real SSL certificates be requested? set to true during testing to not hit limits
   use_staging: false
