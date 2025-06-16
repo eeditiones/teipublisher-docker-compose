@@ -14,6 +14,7 @@ services:
         # use empty string if the app is mapped to the root of the server (see nginx config below)
         CONTEXT_PATH: ${CONTEXT_PATH:-}
         PROXY_CACHING: true
+        JWT_SECRET: ${JWT_SECRET}
     # comment in to automatically restart:
     restart: always
     volumes:
@@ -27,6 +28,15 @@ services:
 {% if services.ner %}
     depends_on:
       - ner
+{% endif %}
+{% if services.collab %}
+  collab:
+    build:
+      context: https://github.com/JinnElements/jinn-tap.git#main
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      JWT_SECRET: {{JWT_SECRET}}
 {% endif %}
 {% if services.ner %}
   ner:

@@ -6,6 +6,8 @@ services:
   iiif: true
   # Named entity recognition
   ner: true
+  # Collaboration service required for Jinn Tap editor
+  collab: true
 # the domains to be served by the proxy. Each domain may map to a different app and root path
 # within the same eXist-db instance
 domains:
@@ -39,19 +41,19 @@ publisher:
     # if the repo is not public, you may need to provide an ACCESS_TOKEN (specify in .env)
     # context: https://${ACCESS_TOKEN_NAME}:${ACCESS_TOKEN_VALUE}@gitlab.com/xxx/xxx.git
     libs:
-      templating: 1.1.0
-      publisher_lib: 4.0.0
+      templating: master
+      publisher_lib: 4.0.2
       roaster: 1.8.1
   # list of apps to build. only relevant if context above is .
   apps:
     # Name of the custom app to include - should correspond to the name of the repository
-    - name: "tei-publisher-app"
+    - name: "jinks"
       # Tag or branch to build
-      tag_or_branch: "v9.0.0"
+      tag_or_branch: "main"
       # GIT repository to clone the app from
-      repo: "https://github.com/eeditiones/tei-publisher-app.git"
+      repo: "https://github.com/eeditiones/jinks.git"
       # enable to embed webcomponents in the app instead of using external CDN
-      local_webcomponents: true
+      local_webcomponents: false
   # App context path: set to 'auto' if apps should be exposed under their full path 
   # (e.g. /exist/apps/tei-publisher)
   context_path: "auto"

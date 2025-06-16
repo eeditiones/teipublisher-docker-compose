@@ -7,3 +7,9 @@ upstream docker-cantaloupe {
   server cantaloupe:8182 fail_timeout=0;
 }
 {% endif %}
+
+{% if services.collab %}
+upstream docker-collab {
+    server collab:8082 fail_timeout=0;
+}
+{% endif %}

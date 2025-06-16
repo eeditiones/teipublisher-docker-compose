@@ -2,10 +2,7 @@
   hosts: all
   vars_files:
     - ./variables.yml
-  vars_prompt:
-    - name: admin_pass
-      prompt: Provide a password for the eXist-db admin user
-      default: ""
+    - ./secrets.yml
   tasks:
     - name: Check for existing installation
       ansible.builtin.stat:
@@ -79,6 +76,7 @@
       environment:
         BUILD_CONTEXT: "{{ publisher.build.context }}"
         CONTEXT_PATH: "{{publisher.context_path}}"
+        JWT_SECRET: "{{JWT_SECRET}}"
     - name: Launch HTTP
       ansible.builtin.shell:
         cmd: docker compose up -d --force-recreate
@@ -99,9 +97,9 @@
         - password
     - name: Set admin password
       ansible.builtin.shell:
-        cmd: docker compose exec publisher java org.exist.start.Main client -x 'sm:passwd("admin", "{{admin.password}}")'
+        cmd: docker compose exec publisher java org.exist.start.Main client -x 'sm:passwd("admin", "{{ADMIN_PASSWD}}")'
         chdir: "{{dest}}"
-      when: admin.password is defined and admin.password != ''
+      when: ADMIN_PASSWD is defined and ADMIN_PASSWD != ''
       tags:
         - password
     - name: Acquire certificates
