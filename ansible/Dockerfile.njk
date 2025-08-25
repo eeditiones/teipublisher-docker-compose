@@ -35,7 +35,7 @@ ARG USR=nonroot:nonroot
 USER ${USR}
 # replace my-edition with name of your app
 {% for app in publisher.apps %}
-COPY --from=builder --chown=${USR}/tmp/{{app.name}}/build/*.xar /exist/autodeploy/
+COPY --from=builder --chown=${USR} /tmp/{{app.name}}/build/*.xar /exist/autodeploy/
 {% endfor %}
 
 ARG HTTP_PORT=8080
