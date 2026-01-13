@@ -79,6 +79,12 @@
       environment:
         BUILD_CONTEXT: "{{ publisher.build.context }}"
         CONTEXT_PATH: "{{publisher.context_path}}"
+      when: publisher.image is not defined
+    - name: Pull docker image
+      ansible.builtin.shell:
+        cmd: docker compose pull publisher
+        chdir: "{{dest}}"
+      when: publisher.image is defined
     - name: Launch HTTP
       ansible.builtin.shell:
         cmd: docker compose up -d --force-recreate

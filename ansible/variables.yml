@@ -31,6 +31,8 @@ domains:
         - /api/document/(test|doc|jats).*/(pdf|epub|print|tex)$
       expires: 1d
 publisher:
+  # if an image is provided, the build context and apps will be ignored and the image will be used instead
+  # image: wolfgangmm/jinks-demo:latest
   build:
     # directory or repository URL containing the Dockerfile to build publisher from
     context: .
