@@ -13,8 +13,8 @@ domains:
     # eXist-db path the root of the server will be mapped to. Specifying a path here
     # will map the root to one single app. Change to empty string ("") if you want to expose the
     # entire database and also set `context_path: auto` below.
-    # root: /exist/apps/tei-publisher
-    root: ""
+    # if root is mapped to a single app, should requests to /exist/apps/ still be allowed?
+    allow_apps: true
     # the name the server should listen to
     hostname: dev.tei-publisher.com
     # settings for the proxy cache. If enabled, requests to content in reading view will be cached
