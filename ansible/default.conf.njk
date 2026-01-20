@@ -14,7 +14,7 @@ server {
   }
 
   location / {
-    return 301 https://{{domain.hostname}}$request_uri;
+    return 301 https://{{primary_domainname}}$request_uri;
   }
 }
 {% endfor %}
