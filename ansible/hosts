@@ -1,4 +1,4 @@
 all:
     hosts:
         # should point to an ssh configuration entry in your .ssh/config
-        dev
+        teipublisher

@@ -6,6 +6,9 @@
     - name: admin_pass
       prompt: Provide a password for the eXist-db admin user
       default: ""
+    - name: tei_pass
+      prompt: Provide a password for the tei user
+      default: ""
   tasks:
     - name: Check for existing installation
       ansible.builtin.stat:
@@ -19,7 +22,7 @@
       ignore_errors: true
     - name: Prune volumes
       ansible.builtin.shell:
-        cmd: docker volume prune -a -f
+        cmd: docker volume prune -f
         chdir: "{{dest}}"
       when: avail.stat.isdir is defined and avail.stat.isdir
       ignore_errors: true
@@ -105,9 +108,16 @@
         - password
     - name: Set admin password
       ansible.builtin.shell:
-        cmd: docker compose exec publisher java org.exist.start.Main client -x 'sm:passwd("admin", "{{admin.password}}")'
+        cmd: docker compose exec publisher java org.exist.start.Main client -x 'sm:passwd("admin", "{{admin_pass}}")'
         chdir: "{{dest}}"
-      when: admin.password is defined and admin.password != ''
+      when: admin_pass is defined and admin_pass != ''
+      tags:
+        - password
+    - name: Set password for user "tei"
+      ansible.builtin.shell:
+        cmd: docker compose exec publisher java org.exist.start.Main client -P "{{admin_pass}}" -x 'sm:passwd("tei", "{{tei_pass}}")'
+        chdir: "{{dest}}"
+      when: tei_pass is defined and tei_pass != ''
       tags:
         - password
     - name: Acquire certificates

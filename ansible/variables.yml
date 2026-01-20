@@ -9,14 +9,15 @@ services:
 # the domains to be served by the proxy. Each domain may map to a different app and root path
 # within the same eXist-db instance
 domains:
-  - name: publisher
+  - name: tei-publisher
     # eXist-db path the root of the server will be mapped to. Specifying a path here
     # will map the root to one single app. Change to empty string ("") if you want to expose the
-    # entire database and also set `context_path: auto` below.
-    # if root is mapped to a single app, should requests to /exist/apps/ still be allowed?
+    # entire database and also set CONTEXT_PATH=auto below.
+    root: /exist/apps/tei-publisher
+    # root: ""
     allow_apps: true
     # the name the server should listen to
-    hostname: dev.tei-publisher.com
+    hostname: tei-publisher.com
     # settings for the proxy cache. If enabled, requests to content in reading view will be cached
     # unless they have been changed. To detect changes, you must set `caching_support: true` in the
     # publisher section below.
@@ -28,11 +29,165 @@ domains:
       enable: true
       urls:
         # cache pdf, epub, print HTML output in test and doc collections
-        - /api/document/(test|doc|jats).*/(pdf|epub|print|tex)$
+        - /api/document/(demo|doc|jats).*/(pdf|epub|print|tex)$
       expires: 1d
+  - name: www.tei-publisher
+    # eXist-db path the root of the server will be mapped to. Specifying a path here
+    # will map the root to one single app. Change to empty string ("") if you want to expose the
+    # entire database and also set CONTEXT_PATH=auto below.
+    root: /exist/apps/tei-publisher
+    # root: ""
+    allow_apps: true
+    # the name the server should listen to
+    hostname: www.tei-publisher.com
+    # settings for the proxy cache. If enabled, requests to content in reading view will be cached
+    # unless they have been changed. To detect changes, you must set `caching_support: true` in the
+    # publisher section below.
+    #
+    # In addition you may want to cache other requests by adding them to the list in `urls`. Those
+    # requests will be statically cached for the duration specified in `expires`.
+    cache:
+      # enable caching
+      enable: true
+      urls:
+        # cache pdf, epub, print HTML output in test and doc collections
+        - /api/document/(demo|doc|jats).*/(pdf|epub|print|tex)$
+      expires: 1d
+  - name: teipublisher
+    # eXist-db path the root of the server will be mapped to. Specifying a path here
+    # will map the root to one single app. Change to empty string ("") if you want to expose the
+    # entire database and also set CONTEXT_PATH=auto below.
+    root: /exist/apps/tei-publisher
+    # root: ""
+    allow_apps: true
+    # the name the server should listen to
+    hostname: teipublisher.com
+    # settings for the proxy cache. If enabled, requests to content in reading view will be cached
+    # unless they have been changed. To detect changes, you must set `caching_support: true` in the
+    # publisher section below.
+    #
+    # In addition you may want to cache other requests by adding them to the list in `urls`. Those
+    # requests will be statically cached for the duration specified in `expires`.
+    cache:
+      # enable caching
+      enable: true
+      urls:
+        # cache pdf, epub, print HTML output in test and doc collections
+        - /api/document/(demo|doc|jats).*/(pdf|epub|print|tex)$
+      expires: 7d
+  - name: www.teipublisher
+    # eXist-db path the root of the server will be mapped to. Specifying a path here
+    # will map the root to one single app. Change to empty string ("") if you want to expose the
+    # entire database and also set CONTEXT_PATH=auto below.
+    root: /exist/apps/tei-publisher
+    # root: ""
+    allow_apps: true
+    # the name the server should listen to
+    hostname: www.teipublisher.com
+    # settings for the proxy cache. If enabled, requests to content in reading view will be cached
+    # unless they have been changed. To detect changes, you must set `caching_support: true` in the
+    # publisher section below.
+    #
+    # In addition you may want to cache other requests by adding them to the list in `urls`. Those
+    # requests will be statically cached for the duration specified in `expires`.
+    cache:
+      # enable caching
+      enable: true
+      urls:
+        # cache pdf, epub, print HTML output in test and doc collections
+        - /api/document/(demo|doc|jats).*/(pdf|epub|print|tex)$
+      expires: 7d
+  - name: teipublisher.org
+    # eXist-db path the root of the server will be mapped to. Specifying a path here
+    # will map the root to one single app. Change to empty string ("") if you want to expose the
+    # entire database and also set CONTEXT_PATH=auto below.
+    root: /exist/apps/tei-publisher
+    # root: ""
+    allow_apps: true
+    # the name the server should listen to
+    hostname: teipublisher.org
+    # settings for the proxy cache. If enabled, requests to content in reading view will be cached
+    # unless they have been changed. To detect changes, you must set `caching_support: true` in the
+    # publisher section below.
+    #
+    # In addition you may want to cache other requests by adding them to the list in `urls`. Those
+    # requests will be statically cached for the duration specified in `expires`.
+    cache:
+      # enable caching
+      enable: true
+      urls:
+        # cache pdf, epub, print HTML output in test and doc collections
+        - /api/document/(demo|doc|jats).*/(pdf|epub|print|tex)$
+      expires: 7d
+  - name: www.teipublisher.org
+    # eXist-db path the root of the server will be mapped to. Specifying a path here
+    # will map the root to one single app. Change to empty string ("") if you want to expose the
+    # entire database and also set CONTEXT_PATH=auto below.
+    root: /exist/apps/tei-publisher
+    # root: ""
+    allow_apps: true
+    # the name the server should listen to
+    hostname: www.teipublisher.org
+    # settings for the proxy cache. If enabled, requests to content in reading view will be cached
+    # unless they have been changed. To detect changes, you must set `caching_support: true` in the
+    # publisher section below.
+    #
+    # In addition you may want to cache other requests by adding them to the list in `urls`. Those
+    # requests will be statically cached for the duration specified in `expires`.
+    cache:
+      # enable caching
+      enable: true
+      urls:
+        # cache pdf, epub, print HTML output in test and doc collections
+        - /api/document/(demo|doc|jats).*/(pdf|epub|print|tex)$
+      expires: 7d
+  - name: tei-publisher.org
+    # eXist-db path the root of the server will be mapped to. Specifying a path here
+    # will map the root to one single app. Change to empty string ("") if you want to expose the
+    # entire database and also set CONTEXT_PATH=auto below.
+    root: /exist/apps/tei-publisher
+    # root: ""
+    allow_apps: true
+    # the name the server should listen to
+    hostname: tei-publisher.org
+    # settings for the proxy cache. If enabled, requests to content in reading view will be cached
+    # unless they have been changed. To detect changes, you must set `caching_support: true` in the
+    # publisher section below.
+    #
+    # In addition you may want to cache other requests by adding them to the list in `urls`. Those
+    # requests will be statically cached for the duration specified in `expires`.
+    cache:
+      # enable caching
+      enable: true
+      urls:
+        # cache pdf, epub, print HTML output in test and doc collections
+        - /api/document/(demo|doc|jats).*/(pdf|epub|print|tex)$
+      expires: 7d
+  - name: www.tei-publisher.org
+    # eXist-db path the root of the server will be mapped to. Specifying a path here
+    # will map the root to one single app. Change to empty string ("") if you want to expose the
+    # entire database and also set CONTEXT_PATH=auto below.
+    root: /exist/apps/tei-publisher
+    # root: ""
+    allow_apps: true
+    # the name the server should listen to
+    hostname: www.tei-publisher.org
+    # settings for the proxy cache. If enabled, requests to content in reading view will be cached
+    # unless they have been changed. To detect changes, you must set `caching_support: true` in the
+    # publisher section below.
+    #
+    # In addition you may want to cache other requests by adding them to the list in `urls`. Those
+    # requests will be statically cached for the duration specified in `expires`.
+    cache:
+      # enable caching
+      enable: true
+      urls:
+        # cache pdf, epub, print HTML output in test and doc collections
+        - /api/document/(demo|doc|jats).*/(pdf|epub|print|tex)$
+      expires: 7d
 publisher:
   # if an image is provided, the build context and apps will be ignored and the image will be used instead
-  # image: wolfgangmm/jinks-demo:latest
+  image: wolfgangmm/tei-publisher-home:latest
   build:
     # directory or repository URL containing the Dockerfile to build publisher from
     context: .
