@@ -6,6 +6,7 @@ services:
   iiif: true
   # Named entity recognition
   ner: true
+primary_domainname: tei-publisher.org
 # the domains to be served by the proxy. Each domain may map to a different app and root path
 # within the same eXist-db instance
 domains:

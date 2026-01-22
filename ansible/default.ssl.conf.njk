@@ -12,6 +12,25 @@ server {
   ssl_certificate /etc/nginx/ssl/live/{{domain.hostname}}/fullchain.pem;
   ssl_certificate_key /etc/nginx/ssl/live/{{domain.hostname}}/privkey.pem;
 
+  location = /exist/apps/tei-publisher/documentation {
+    return 301 https://{{primary_domainname}}/browse.html?collection=doc;
+  }
+  location = /exist/apps/tei-publisher/documentation/create-app {
+    return 301 https://{{primary_domainname}}/doc/quickstart.xml;
+  }
+  location = /exist/apps/tei-publisher/documentation/installation {
+    return 301 https://{{primary_domainname}}/doc/installation.xml;
+  }
+  location = /exist/apps/tei-publisher-home/index.html {
+    return 301 https://{{primary_domainname}}/index.html;
+  }
+
+{% if domain.hostname != primary_domainname %}
+  location / {
+    return 301 https://{{primary_domainname}}$request_uri;
+  }
+{% else %}
+
   location / {
     proxy_pass http://docker-publisher{{domain.root}}$request_uri;
     proxy_redirect http://$host{{domain.root}}/ /;
@@ -90,6 +109,8 @@ server {
   }
 {% endfor %}
 {% endif %}
+
+{% endif %}{# domain.hostname != primary_domainname #}
 
 {% if services.iiif %}
   location /iiif {
