@@ -13,6 +13,7 @@ domains:
     # eXist-db path the root of the server will be mapped to. Specifying a path here
     # will map the root to one single app. Change to empty string ("") if you want to expose the
     # entire database and also set `context_path: auto` below.
+    root: /exist/apps/tei-publisher
     # if root is mapped to a single app, should requests to /exist/apps/ still be allowed?
     allow_apps: true
     # the name the server should listen to
@@ -32,7 +33,7 @@ domains:
       expires: 1d
 publisher:
   # if an image is provided, the build context and apps will be ignored and the image will be used instead
-  # image: wolfgangmm/jinks-demo:latest
+  image: existdb/teipublisher:latest
   build:
     # directory or repository URL containing the Dockerfile to build publisher from
     context: .

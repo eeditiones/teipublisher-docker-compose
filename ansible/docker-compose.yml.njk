@@ -1,6 +1,6 @@
 services:
   publisher:
-{% if publisher.image %}
+{% if publisher.image is defined %}
     image: {{ publisher.image }}
 {% else %}
     build:
