@@ -40,9 +40,9 @@
         - password
     - name: Set admin password
       ansible.builtin.shell:
-        cmd: docker compose exec publisher java org.exist.start.Main client -x 'sm:passwd("admin", "{{admin.password}}")'
+        cmd: docker compose exec publisher java org.exist.start.Main client -x 'sm:passwd("admin", "{{admin_passw}}")'
         chdir: "{{dest}}"
-      when: admin.password is defined and admin.password != ''
+      when: admin_pass is defined and admin_pass != ''
       tags:
         - password
     - import_tasks: check.yml
