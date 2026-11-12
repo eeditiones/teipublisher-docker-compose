@@ -3,6 +3,26 @@
 # path the root of the server is mapped to. Not named *.conf so nginx does not
 # load it at http level.
 
+# The /db/apps collection itself: without this, eXist's REST interface lists
+# all installed apps. Only reachable if ROOT_PATH is empty.
+location ~ ^/exist/apps/?$ {
+  return 404;
+}
+
+# Uncomment to make admin and development apps unreachable through the proxy
+# (recommended for production). They stay reachable on port 8080 directly.
+# Remove the app ROOT_PATH points to (jinks by default) from the list.
+# Must stay the first regex location so it wins over the /exist/apps/ ones below.
+# location ~ ^/exist/apps/(eXide|jinks|dashboard|monex|packageservice|doc|fundocs)(/|$) {
+#   return 404;
+# }
+
+# Uncomment to block eXist-db's REST, RESTXQ, XML-RPC and WebDAV interfaces.
+# They are only exposed through the proxy if ROOT_PATH is empty.
+# location ~ ^/exist/(rest|restxq|xmlrpc|webdav)(/|$) {
+#   return 404;
+# }
+
 # The homepage is rendered by eXist on every request and sent with
 # Cache-Control: no-cache. Cache the finished HTML for a short time so the
 # browser is not left blank while that render runs. lang is read from the

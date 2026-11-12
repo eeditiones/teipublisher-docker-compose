@@ -24,6 +24,15 @@ domains:
     allow_apps: true
     # the name the server should listen to
     hostname: tei-publisher.org
+    # apps below /exist/apps/ which should not be reachable through the proxy.
+    # Recommended for production: eXide, jinks and the eXist admin tools.
+    # Left open on tei-publisher.org.
+    # They stay reachable on port 8080 of the server itself (e.g. via ssh tunnel).
+    # Do not block the app `root` points to.
+    # block_apps: [eXide, jinks, dashboard, monex, packageservice, doc, fundocs]
+    # block eXist-db's REST, RESTXQ, XML-RPC and WebDAV interfaces in the proxy. They are
+    # only exposed if root is "". Apps calling /exist/rest from the browser will break.
+    block_services: true
     # other host names which permanently redirect to `hostname`. A certificate is
     # requested for each of them.
     aliases:
@@ -88,6 +97,11 @@ publisher:
   # needed if you enable caching in the proxy section above.
   # false matches the image default the live server runs with
   caching_support: false
+  # Who may run XQuery sent to eXist's REST interface (?_query=, ?_xpath=, POSTed
+  # queries): disabled (default), authenticated or enabled. Never use enabled on a
+  # public server: any visitor could run queries as guest. authenticated admits
+  # anyone with valid credentials, including the guest account.
+  rest_submission: disabled
   # Optional password for the tei user, set together with the admin password on the
   # first start. Leave empty if no app creates a tei user.
   tei_pass: "{{ tei_pass | default('') }}"

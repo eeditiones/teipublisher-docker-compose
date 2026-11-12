@@ -24,6 +24,9 @@ services:
     environment:
       EXIST_ADMIN_PASSWORD: ${EXIST_ADMIN_PASSWORD:-}
       EXIST_TEI_PASSWORD: ${EXIST_TEI_PASSWORD:-}
+      # Who may run XQuery sent to eXist's REST interface (?_query=, ?_xpath=,
+      # POSTed queries): disabled (default), authenticated or enabled.
+      EXIST_REST_SUBMISSION: ${EXIST_REST_SUBMISSION:-disabled}
       # Same as the image default, except MaxRAMPercentage (75 in the image).
       # A heap OOM exits via ExitOnOutOfMemoryError and the container restarts.
       JAVA_TOOL_OPTIONS: >-
