@@ -7,6 +7,20 @@
 # Cache-Control: no-cache. Cache the finished HTML for a short time so the
 # browser is not left blank while that render runs. lang is read from the
 # cookie as well as the query string, so it is part of the key.
+# Uncomment to make admin and development apps unreachable through the proxy
+# (recommended for production). They stay reachable on port 8080 directly.
+# Remove the app ROOT_PATH points to (jinks by default) from the list.
+# Must stay the first regex location so it wins over the /exist/apps/ ones below.
+# location ~ ^/exist/apps/(eXide|jinks|dashboard|monex|packageservice|doc|fundocs)(/|$) {
+#   return 404;
+# }
+
+# Uncomment to block eXist-db's REST, RESTXQ, XML-RPC and WebDAV interfaces.
+# They are only exposed through the proxy if ROOT_PATH is empty.
+# location ~ ^/exist/(rest|restxq|xmlrpc|webdav)(/|$) {
+#   return 404;
+# }
+
 location = /index.html {
     proxy_pass http://docker-publisher${ROOT_PATH}$request_uri;
     proxy_redirect http://$host${ROOT_PATH}/ /;

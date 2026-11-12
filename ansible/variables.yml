@@ -18,6 +18,14 @@ domains:
     allow_apps: true
     # the name the server should listen to
     hostname: dev.tei-publisher.com
+    # apps below /exist/apps/ which should not be reachable through the proxy.
+    # Recommended for production: eXide, jinks and the eXist admin tools.
+    # They stay reachable on port 8080 of the server itself (e.g. via ssh tunnel).
+    # Do not block the app `root` points to.
+    # block_apps: [eXide, jinks, dashboard, monex, packageservice, doc, fundocs]
+    # block eXist-db's REST, RESTXQ, XML-RPC and WebDAV interfaces in the proxy. They are
+    # only exposed if root is "". Apps calling /exist/rest from the browser will break.
+    # block_services: true
     # other host names which permanently redirect to `hostname`. A certificate is
     # requested for each of them.
     aliases: []

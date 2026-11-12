@@ -39,6 +39,22 @@ server {
 
   include /etc/nginx/conf.d/block-probes.inc;
 
+{% if domain.block_apps | default([]) | length > 0 %}
+  # Admin and development apps are not reachable through the proxy. Must stay
+  # the first regex location so it wins over the /exist/apps/ locations below.
+  location ~ ^/exist/apps/({{ domain.block_apps | join('|') }})(/|$) {
+    return 404;
+  }
+
+{% endif %}
+{% if domain.block_services | default(false) %}
+  # eXist-db's REST, RESTXQ, XML-RPC and WebDAV interfaces. Only reachable
+  # through the proxy if root is "", but harmless otherwise.
+  location ~ ^/exist/(rest|restxq|xmlrpc|webdav)(/|$) {
+    return 404;
+  }
+
+{% endif %}
   location / {
     proxy_pass http://docker-publisher{{domain.root}}$request_uri;
     proxy_redirect http://$host{{domain.root}}/ /;
