@@ -39,6 +39,12 @@ server {
 
   include /etc/nginx/conf.d/block-probes.inc;
 
+  # The /db/apps collection itself: without this, eXist's REST interface lists
+  # all installed apps. Only reachable if root is "".
+  location ~ ^/exist/apps/?$ {
+    return 404;
+  }
+
 {% if domain.block_apps | default([]) | length > 0 %}
   # Admin and development apps are not reachable through the proxy. Must stay
   # the first regex location so it wins over the /exist/apps/ locations below.

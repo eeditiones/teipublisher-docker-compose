@@ -3,10 +3,12 @@
 # path the root of the server is mapped to. Not named *.conf so nginx does not
 # load it at http level.
 
-# The homepage is rendered by eXist on every request and sent with
-# Cache-Control: no-cache. Cache the finished HTML for a short time so the
-# browser is not left blank while that render runs. lang is read from the
-# cookie as well as the query string, so it is part of the key.
+# The /db/apps collection itself: without this, eXist's REST interface lists
+# all installed apps. Only reachable if ROOT_PATH is empty.
+location ~ ^/exist/apps/?$ {
+  return 404;
+}
+
 # Uncomment to make admin and development apps unreachable through the proxy
 # (recommended for production). They stay reachable on port 8080 directly.
 # Remove the app ROOT_PATH points to (jinks by default) from the list.
@@ -21,6 +23,10 @@
 #   return 404;
 # }
 
+# The homepage is rendered by eXist on every request and sent with
+# Cache-Control: no-cache. Cache the finished HTML for a short time so the
+# browser is not left blank while that render runs. lang is read from the
+# cookie as well as the query string, so it is part of the key.
 location = /index.html {
     proxy_pass http://docker-publisher${ROOT_PATH}$request_uri;
     proxy_redirect http://$host${ROOT_PATH}/ /;

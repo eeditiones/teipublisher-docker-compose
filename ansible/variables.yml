@@ -77,6 +77,11 @@ publisher:
   # support cache revalidation: if set, TEI Publisher will respond to the If-Modified-Since header.
   # needed if you enable caching in the proxy section above.
   caching_support: true
+  # Who may run XQuery sent to eXist's REST interface (?_query=, ?_xpath=, POSTed
+  # queries): disabled (default), authenticated or enabled. Never use enabled on a
+  # public server: any visitor could run queries as guest. authenticated admits
+  # anyone with valid credentials, including the guest account.
+  # rest_submission: disabled
   # Optional password for the tei user, set together with the admin password on the
   # first start. Leave empty if no app creates a tei user.
   tei_pass: ""
