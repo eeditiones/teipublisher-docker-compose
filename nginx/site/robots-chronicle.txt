@@ -1,0 +1,3 @@
+# Filtered chronicle views are for browsers. Crawlers should fetch the page once, with no query string.
+User-agent: *
+Disallow: /exist/apps/wall-came-down/chronicle.html?

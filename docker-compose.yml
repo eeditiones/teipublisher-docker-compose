@@ -1,37 +1,69 @@
 services:
+  # Copies a static busybox into a volume. The eXist-db images are distroless,
+  # so the publisher entrypoint needs it to run the password setup script.
+  exist-init:
+    image: busybox:stable-musl
+    command: ["cp", "/bin/busybox", "/exist-init/bin/busybox"]
+    volumes:
+      - exist-init-bin:/exist-init/bin
   publisher:
-    build:
-      context: ${BUILD_CONTEXT:-.}
-      # use one of the below instead if you want to build from an external git repository (needs a Dockerfile):
-      # context: https://github.com/eeditiones/tei-publisher-app.git#master
-      # if the repo is not public, you may need to provide an ACCESS_TOKEN (specify in .env)
-      # context: https://${ACCESS_TOKEN_NAME}:${ACCESS_TOKEN_VALUE}@gitlab.com/xxx/xxx.git
-      dockerfile: Dockerfile
-      args:
-        # Name of the custom app to include - should correspond to the name of the repository
-        APP_NAME: ${APP_NAME:-tei-publisher}
-        # Tag or branch to build
-        APP_TAG_OR_BRANCH: ${APP_TAG_OR_BRANCH:-v8.0.0}
-        # GIT repository to clone the app from
-        APP_REPO: ${APP_REPO:-https://github.com/eeditiones/tei-publisher-app.git}
-        # Endpoint for the named entity recognition service.
-        NER_ENDPOINT: http://ner:8001
-        # Set to 'auto' if the app should be exposed under its full path (e.g. /exist/apps/tei-publisher)
-        # use empty string if the app is mapped to the root of the server (see nginx config below)
-        CONTEXT_PATH: ${CONTEXT_PATH:-}
-        PROXY_CACHING: true
+    # Latest jinks without additional apps. To build an image with your own app
+    # on top, use: docker compose -f docker-compose.yml -f docker-compose.build.yml up --build
+    image: ${PUBLISHER_IMAGE:-ghcr.io/eeditiones/jinks:latest}
     # comment in to automatically restart:
     restart: always
+    # Without a cap the JVM may grow until the kernel kills it (exit 137).
+    # Together with MaxRAMPercentage below the heap stays inside the limit and
+    # leaves room for FOP and native memory.
+    mem_limit: ${MEM_LIMIT:-4g}
+    memswap_limit: ${MEM_LIMIT:-4g}
+    # Starts eXist-db and sets the admin (and tei) password from the variables
+    # below, but only while the data volume still has an empty admin password.
+    entrypoint: ["/exist-init/bin/busybox", "sh", "/exist-init/entrypoint.sh"]
+    stop_grace_period: 60s
+    environment:
+      EXIST_ADMIN_PASSWORD: ${EXIST_ADMIN_PASSWORD:-}
+      EXIST_TEI_PASSWORD: ${EXIST_TEI_PASSWORD:-}
+      # Same as the image default, except MaxRAMPercentage (75 in the image).
+      # A heap OOM exits via ExitOnOutOfMemoryError and the container restarts.
+      JAVA_TOOL_OPTIONS: >-
+        -Dfile.encoding=UTF8
+        -Dsun.jnu.encoding=UTF-8
+        -Djava.awt.headless=true
+        -Dorg.exist.db-connection.cacheSize=256M
+        -Dorg.exist.db-connection.pool.max=20
+        -Dlog4j.configurationFile=/exist/etc/log4j2.xml
+        -Dexist.home=/exist
+        -Dexist.configurationFile=/exist/etc/conf.xml
+        -Djetty.home=/exist
+        -Dexist.jetty.config=/exist/etc/jetty/standard.enabled-jetty-configs
+        -XX:+UseStringDeduplication
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=65.0
+        -XX:+ExitOnOutOfMemoryError
+      # Endpoint for the named entity recognition service, context path
+      # ('auto' exposes apps under their full path, e.g. /exist/apps/jinks)
+      # and support for proxy cache revalidation.
+      JDK_JAVA_OPTIONS: >-
+        -Dteipublisher.ner-endpoint=http://ner:8001
+        -Dteipublisher.context-path=${CONTEXT_PATH:-auto}
+        -Dteipublisher.proxy-caching=true
     volumes:
       # database files will be stored in a volume to avoid data loss
       # when the service is updated
       - /exist/data
+      - exist-init-bin:/exist-init/bin:ro
+      - ./exist-init/entrypoint.sh:/exist-init/entrypoint.sh:ro
+      - ./exist-init/set-passwords.sh:/exist-init/set-passwords.sh:ro
       # uncomment to map eXist-db backups to local directory
       # - ./backup:/exist/backup
     ports:
       - 8080:8080
     depends_on:
-      - ner
+      exist-init:
+        condition: service_completed_successfully
+      ner:
+        condition: service_started
   ner:
     # image will be pulled from github
     image: ghcr.io/eeditiones/tei-publisher-ner/teipublisher-ner:master
@@ -45,14 +77,13 @@ services:
     image: nginx:alpine
     environment:
       # eXist-db path the root of the server will be mapped to
-      # should point to the app path if CONTEXT_PATH is empty (see above)
-      # or the empty string otherwise
-      ROOT_PATH: ${ROOT_PATH:-/exist/apps/tei-publisher}
+      ROOT_PATH: ${ROOT_PATH-/exist/apps/jinks}
       # Name of the server - irrelevant on localhost
       SERVER_NAME: ${SERVER_NAME:-example.com}
     volumes:
       - ./nginx/conf/:/etc/nginx/conf.d/:rw
       - ./nginx/templates:/etc/nginx/templates/:ro
+      - ./nginx/cache:/var/cache/nginx/:rw
       - ./certbot/www:/var/www/certbot/:ro
       - ./certbot/conf/:/etc/nginx/ssl/:ro
     ports:
@@ -76,8 +107,11 @@ services:
       CANTALOUPE_ENDPOINT_ADMIN_ENABLED: false
       CANTALOUPE_ENDPOINT_ADMIN_SECRET: my_admin_pass
     volumes:
-      - ${IIIF_IMAGES}:/images
+      - ${IIIF_IMAGES:-./iiif}:/images
     restart: always
     # comment in to enable access to cantaloupe on port 8182, including admin interface
-    ports:
-      - 8182:8182
+    # ports:
+    #   - 8182:8182
+
+volumes:
+  exist-init-bin:

@@ -1,4 +1,5 @@
-# Configuration for TEI Publisher with virtual host and SSL
+# Configuration for TEI Publisher with virtual host and SSL.
+# Rename to default.conf.template (together with default.ssl.conf.off) to enable.
 
 server {
   listen 80;
@@ -6,6 +7,8 @@ server {
 
   server_name ${SERVER_NAME};
   server_tokens off;
+
+  include /etc/nginx/conf.d/block-probes.inc;
 
   # Required by letsencrypt certbot to acquire certificate
   location /.well-known/acme-challenge/ {

@@ -1,56 +1,31 @@
-ARG EXIST_VERSION=6.2.0
-ARG BUILD=local
+# Adds the apps configured in variables.yml (publisher.apps) on top of the base image.
+ARG BASE_IMAGE={{ publisher.base_image | default('ghcr.io/eeditiones/jinks:latest') }}
 
 FROM ghcr.io/eeditiones/builder:latest AS builder
 
-ARG APP_NAME=tei-publisher-app
-ARG APP_REPO=https://github.com/eeditiones/tei-publisher-app.git
-ARG APP_TAG_OR_BRANCH=master
-
 WORKDIR /tmp
 
-# Build the main app configured in the docker-compose.yml
 {% for app in publisher.apps %}
-RUN  git clone {{app.repo}} \
+RUN  git clone {{app.repo}} {{app.name}} \
     && cd {{app.name}} \
-    {% if app.tag_or_branch is defined and app.tag_or_branch %}
+{% if app.tag_or_branch is defined and app.tag_or_branch %}
     && echo Checking out {{app.tag_or_branch}} \
     && git checkout {{app.tag_or_branch}} \
-    {% endif %}
-    {% if app.local_webcomponents is defined and app.local_webcomponents %}
+{% endif %}
+{% if app.local_webcomponents is defined and app.local_webcomponents %}
     && sed -i 's/$config:webcomponents :=.*;/$config:webcomponents := "local";/' modules/config.xqm \
-    {% endif %}
-    {% if app.prebuild is defined %}
+{% endif %}
+{% if app.prebuild is defined %}
     && {{ app.prebuild }} \
-    {% endif %}
+{% endif %}
     && ant {% if app.local_webcomponents is defined and app.local_webcomponents %}xar-local{% endif %}
-    {% raw %}
 
-    {% endraw %}
 {% endfor %}
-FROM ghcr.io/jinntec/base:${EXIST_VERSION}
+FROM ${BASE_IMAGE}
 
-ARG APP_NAME=tei-publisher-app
-ARG USR=nonroot:nonroot
-USER ${USR}
-# replace my-edition with name of your app
 {% for app in publisher.apps %}
-COPY --from=builder --chown=${USR} /tmp/{{app.name}}/build/*.xar /exist/autodeploy/
+COPY --from=builder /tmp/{{app.name}}/build/*.xar /exist/autodeploy/
 {% endfor %}
-
-ARG HTTP_PORT=8080
-ARG HTTPS_PORT=8443
-
-ARG NER_ENDPOINT=http://localhost:8001
-ARG CONTEXT_PATH=auto
-ARG PROXY_CACHING=false
-
-ENV JDK_JAVA_OPTIONS="\
-    -Dteipublisher.ner-endpoint=${NER_ENDPOINT} \
-    -Dteipublisher.context-path=${CONTEXT_PATH} \
-    -Dteipublisher.proxy-caching=${PROXY_CACHING}"
 
 # pre-populate the database by launching it once
-RUN [ "java", "org.exist.start.Main", "client", "--no-gui",  "-l" ]
-
-EXPOSE ${HTTP_PORT} ${HTTPS_PORT}
+RUN [ "java", "org.exist.start.Main", "client", "--no-gui",  "-l", "-u", "admin", "-P", "" ]

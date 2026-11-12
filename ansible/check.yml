@@ -1,6 +1,6 @@
 - name: Check if hosts respond
   ansible.builtin.uri:
-    url: "https://{{item.hostname}}/index.html"
+    url: "https://{{item.hostname}}/"
     return_content: false
   loop: "{{domains}}"
   register: result
