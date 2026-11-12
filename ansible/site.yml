@@ -30,38 +30,68 @@
         state: absent
       tags:
         - clean
-    - name: Create directory
+    - name: Check admin password
+      ansible.builtin.assert:
+        that:
+          - "\"'\" not in admin_pass"
+          - "\"'\" not in (publisher.tei_pass | default(''))"
+        fail_msg: "Passwords must not contain a single quote (')"
+        quiet: true
+    - name: Create directories
       ansible.builtin.file:
-        path: "{{dest}}/nginx/conf"
+        path: "{{ item }}"
         state: directory
+      loop:
+        - "{{dest}}/nginx/conf"
+        - "{{dest}}/exist-init"
     - name: Copy files
       ansible.builtin.copy:
         src: '{{ item.src }}'
         dest: '{{ item.dest }}'
+        mode: '{{ item.mode | default(omit) }}'
       loop:
-        - { src: ../nginx/conf/upstream.conf, dest: "{{dest}}/nginx/conf" }
-        - { src: ../.env, dest: "{{dest}}" }
-        - { src: ../certbot-renew.sh, dest: "{{dest}}" }
+        - { src: ../nginx/conf/00-cache.conf, dest: "{{dest}}/nginx/conf/" }
+        - { src: ../nginx/conf/00-limits.conf, dest: "{{dest}}/nginx/conf/" }
+        - { src: ../nginx/conf/block-probes.inc, dest: "{{dest}}/nginx/conf/" }
+        - { src: ../nginx/conf/document-block-bots.inc, dest: "{{dest}}/nginx/conf/" }
+        - { src: ../nginx/conf/document-cache-params.inc, dest: "{{dest}}/nginx/conf/" }
+        - { src: ../exist-init/entrypoint.sh, dest: "{{dest}}/exist-init/" }
+        - { src: ../exist-init/set-passwords.sh, dest: "{{dest}}/exist-init/" }
+        - { src: ../certbot-renew.sh, dest: "{{dest}}", mode: '0755' }
         - { src: ../iiif, dest: "{{dest}}" }
+      tags:
+        - copy
+    - name: Write .env
+      ansible.builtin.template:
+        src: env.njk
+        dest: "{{dest}}/.env"
+        mode: '0600'
       tags:
         - copy
     - name: Generate Dockerfile and docker-compose.yml
       block:
-        - name: Generate Dockerfile and docker-compose.yml from template
+        - name: Generate docker-compose.yml from template
           connection: local
           ansible.builtin.template:
-            src: "{{ item.src }}"
-            dest: "{{ item.dest }}"
-          loop:
-            - { src: Dockerfile.njk, dest: "{{playbook_dir}}/Dockerfile.generated" }
-            - { src: docker-compose.yml.njk, dest: "{{playbook_dir}}/docker-compose.yml.generated"}
-        - name: Copy generated files to server
+            src: docker-compose.yml.njk
+            dest: "{{playbook_dir}}/docker-compose.yml.generated"
+        - name: Generate Dockerfile from template
+          connection: local
+          ansible.builtin.template:
+            src: Dockerfile.njk
+            dest: "{{playbook_dir}}/Dockerfile.generated"
+          when: publisher.apps | default([]) | length > 0
+        - name: Copy docker-compose.yml to server
           ansible.builtin.copy:
-            src: "{{ item.src }}"
-            dest: "{{ item.dest }}"
-          loop:
-            - { src: "{{playbook_dir}}/Dockerfile.generated", dest: "{{dest}}/Dockerfile" }
-            - { src: "{{playbook_dir}}/docker-compose.yml.generated", dest: "{{dest}}/docker-compose.yml" }
+            src: "{{playbook_dir}}/docker-compose.yml.generated"
+            dest: "{{dest}}/docker-compose.yml"
+        - name: Copy Dockerfile to server
+          ansible.builtin.copy:
+            src: "{{playbook_dir}}/Dockerfile.generated"
+            dest: "{{dest}}/Dockerfile"
+          when: publisher.apps | default([]) | length > 0
+      tags:
+        - dockerfile
     - name: Create nginx configs
       ansible.builtin.template:
         src: "{{ item.src }}"
@@ -76,45 +106,24 @@
       ansible.builtin.shell:
         cmd: docker compose build --no-cache --pull
         chdir: "{{dest}}"
-      environment:
-        BUILD_CONTEXT: "{{ publisher.build.context }}"
-        CONTEXT_PATH: "{{publisher.context_path}}"
-      when: publisher.image is not defined
-    - name: Pull docker image
+      when: publisher.apps | default([]) | length > 0
+    - name: Pull docker images
       ansible.builtin.shell:
-        cmd: docker compose pull publisher
+        cmd: docker compose pull --ignore-buildable
         chdir: "{{dest}}"
-      when: publisher.image is defined
+    # The admin password from the prompt is set by the publisher entrypoint
+    # (exist-init) on first start, while the database still has an empty password.
     - name: Launch HTTP
       ansible.builtin.shell:
         cmd: docker compose up -d --force-recreate
         chdir: "{{dest}}"
-      environment:
-        IIIF_IMAGES: "{{iiif.images}}"
       tags:
         - launch
-    - name: Wait for eXist-db
-      ansible.builtin.shell:
-        cmd: docker compose exec publisher java org.exist.start.Main client -x 'system:get-version()'
-        chdir: "{{dest}}"
-      register: result
-      until: result.rc == 0
-      retries: 5
-      delay: 10
-      tags:
-        - password
-    - name: Set admin password
-      ansible.builtin.shell:
-        cmd: docker compose exec publisher java org.exist.start.Main client -x 'sm:passwd("admin", "{{admin_pass}}")'
-        chdir: "{{dest}}"
-      when: admin_pass is defined and admin_pass != ''
-      tags:
-        - password
     - name: Acquire certificates
       ansible.builtin.shell:
-        cmd: docker compose run --rm  certbot certonly {{"--test-cert" if cert.use_staging}} --webroot --webroot-path /var/www/certbot/ -n --agree-tos -m {{cert.email}} -d {{item.hostname}}
+        cmd: docker compose run --rm  certbot certonly {{"--test-cert" if cert.use_staging}} --webroot --webroot-path /var/www/certbot/ -n --agree-tos -m {{cert.email}} -d {{item}}
         chdir: "{{dest}}"
-      loop: "{{domains}}"
+      loop: "{{ domains | map(attribute='hostname') | list + (domains | map(attribute='aliases', default=[]) | flatten) }}"
       tags:
         - cert
     - name: Enable HTTPS

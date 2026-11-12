@@ -1,4 +1,6 @@
 certbot
+nginx/cache
 nginx/conf/default.*
 nginx/conf/localhost.*
+nginx/conf/publisher-locations.inc
 ansible/*.generated

@@ -1,7 +1,32 @@
-# page_cache should be large enough to accomodate all keys and should correlate with max_size
-proxy_cache_path /var/cache/nginx levels=1:2 keys_zone=page_cache:512m max_size=1g use_temp_path=off inactive=1d;
+{# Proxy headers shared by all locations forwarding to eXist-db #}
+{% macro proxy_headers(cookie_path='/') %}
+    proxy_set_header   Host $host;
+    proxy_set_header   X-Real-IP $remote_addr;
+    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header   X-Forwarded-Host $server_name;
+    proxy_ssl_server_name on;
+    proxy_cookie_path /exist {{ cookie_path }};
+    client_max_body_size  512m;
+{% endmacro %}
+{% macro parts_cache(expires) %}
+    expires {{ expires }}; # time for client to recheck
+    proxy_cache_key "$request_method$uri$is_args$args";
+    proxy_cache page_cache;
+    proxy_cache_valid 200 301 302 304 {{ expires }};
+    proxy_cache_valid 400 401 0m;
+    proxy_cache_valid any 1s;
+    proxy_cache_lock on; # concurrent requests will be serialized
+    proxy_cache_min_uses 1;
+    proxy_cache_revalidate on;
+    proxy_ignore_headers Set-Cookie Cache-Control Vary;
+    proxy_cache_use_stale error timeout invalid_header updating http_500 http_502 http_503 http_504;
+    add_header X-Proxy-Cache $upstream_cache_status;
+{% endmacro %}
+# The proxy cache (page_cache) is defined in 00-cache.conf, rate limits and
+# bot/probe maps in 00-limits.conf.
 
 {% for domain in domains %}
+{% set parts_expires = domain.cache.parts_expires | default('7d') %}
 # Configuration for {{domain.name}} using HTTPS
 server {
   listen 443 ssl;
@@ -12,83 +37,96 @@ server {
   ssl_certificate /etc/nginx/ssl/live/{{domain.hostname}}/fullchain.pem;
   ssl_certificate_key /etc/nginx/ssl/live/{{domain.hostname}}/privkey.pem;
 
+  include /etc/nginx/conf.d/block-probes.inc;
+
   location / {
     proxy_pass http://docker-publisher{{domain.root}}$request_uri;
     proxy_redirect http://$host{{domain.root}}/ /;
-    proxy_set_header   Host $host;
-    proxy_set_header   X-Real-IP $remote_addr;
-    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header   X-Forwarded-Host $server_name;
-    proxy_ssl_server_name on;
-    proxy_cookie_path /exist /;
-    client_max_body_size  512m;
+{{ proxy_headers() }}
   }
 
-{% if domain.allow_apps %}
-    location ~ ^/exist/apps/([^/]+) {
-        proxy_pass http://docker-publisher$request_uri;
-        proxy_redirect http://$host/exist/apps/$1/ /exist/apps/$1/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Host $server_name;
-        proxy_ssl_server_name on;
-        proxy_cookie_path /exist /exist;
-        client_max_body_size 512m;
-    }
+{% if domain.root != "" %}
+  # The homepage is rendered by eXist on every request and sent with
+  # Cache-Control: no-cache. Cache the finished HTML for a short time so the
+  # browser is not left blank while that render runs. lang is read from the
+  # cookie as well as the query string, so it is part of the key.
+  location = /index.html {
+    proxy_pass http://docker-publisher{{domain.root}}$request_uri;
+    proxy_redirect http://$host{{domain.root}}/ /;
+{{ proxy_headers() }}
+    proxy_cache page_cache;
+    proxy_cache_key "$scheme$host$request_uri|$cookie_lang";
+    proxy_cache_valid 200 10m;
+    proxy_cache_lock on;
+    proxy_cache_lock_timeout 60s;
+    proxy_cache_use_stale updating error timeout invalid_header http_500 http_502 http_503 http_504;
+    proxy_cache_background_update on;
+    proxy_ignore_headers Cache-Control Expires Vary Set-Cookie;
+    proxy_hide_header Cache-Control;
+    proxy_hide_header Vary;
+    proxy_cache_bypass $http_authorization;
+    proxy_no_cache $http_authorization;
+    add_header X-Proxy-Cache $upstream_cache_status always;
+    add_header Cache-Control "public, max-age=60" always;
+  }
 {% endif %}
 
 {% if domain.cache.enable %}
-  location {{ "~*" if domain.root == "" else "^~" }} /api/parts/ {
-    proxy_pass http://docker-publisher{{domain.root}}$request_uri;
-    proxy_redirect http://$host{{domain.root}}/ /;
-    proxy_set_header   Host $host;
-    proxy_set_header   X-Real-IP $remote_addr;
-    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header   X-Forwarded-Host $server_name;
-    proxy_ssl_server_name on;
-    proxy_cookie_path /exist /;
-    client_max_body_size  512m;
-
-    expires 5m; # time for client to recheck
-    proxy_cache_key "$request_method$uri$is_args$args";
-    proxy_cache page_cache;
-    proxy_cache_valid any 1s;
-    proxy_cache_valid 400 401 0m;
-    proxy_cache_valid 200 301 302 304 1s;
-    proxy_cache_lock on; # concurrent requests will be serialized
-    proxy_cache_min_uses 1;
-    proxy_cache_revalidate on;
-    proxy_ignore_headers Set-Cookie Cache-Control Vary;
-    proxy_cache_use_stale error timeout invalid_header updating http_500 http_502 http_503 http_504;
-    add_header X-Proxy-Cache $upstream_cache_status;
+{% if domain.allow_apps %}
+  # Caches for apps below /exist/apps/. Regex locations are checked in order,
+  # so these must come before the generic ^/exist/apps/ location below.
+{% for pattern in domain.cache.urls %}
+  location ~* ^/exist/apps/([^/]+){{ pattern | regex_replace('^\^', '') }} {
+    proxy_pass http://docker-publisher$request_uri;
+    proxy_redirect http://$host/exist/apps/$1/ /exist/apps/$1/;
+    include /etc/nginx/conf.d/document-block-bots.inc;
+    include /etc/nginx/conf.d/document-cache-params.inc;
   }
 
+{% endfor %}
+  location ~* ^/exist/apps/([^/]+)/api/document/.+/md$ {
+    proxy_pass http://docker-publisher$request_uri;
+    proxy_redirect http://$host/exist/apps/$1/ /exist/apps/$1/;
+    include /etc/nginx/conf.d/document-cache-params.inc;
+  }
+
+  location ~* ^/exist/apps/([^/]+)/api/parts/ {
+    proxy_pass http://docker-publisher$request_uri;
+    proxy_redirect http://$host/exist/apps/$1/ /exist/apps/$1/;
+{{ proxy_headers('/exist') }}
+{{ parts_cache(parts_expires) }}
+  }
+
+{% endif %}
 {% for pattern in domain.cache.urls %}
   location ~* {{pattern}} {
     proxy_pass http://docker-publisher{{domain.root}}$request_uri;
     proxy_redirect http://$host{{domain.root}}/ /;
-    proxy_set_header   Host $host;
-    proxy_set_header   X-Real-IP $remote_addr;
-    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header   X-Forwarded-Host $server_name;
-    proxy_ssl_server_name on;
-    proxy_cookie_path /exist /;
-    client_max_body_size  512m;
-
-    expires {{domain.cache.expires}}; # time for client to recheck
-    proxy_cache_key "$request_method$uri$is_args$arg_odd$arg_source";
-    proxy_cache page_cache;
-    proxy_cache_valid any {{domain.cache.expires}};
-    proxy_cache_valid 400 401 0m;
-    proxy_cache_valid 200 301 302 304 {{domain.cache.expires}};
-    proxy_cache_lock on; # concurrent requests will be serialized
-    proxy_cache_min_uses 1;
-    proxy_ignore_headers Set-Cookie Cache-Control Vary Expires;
-    proxy_cache_use_stale error timeout invalid_header updating http_500 http_502 http_503 http_504;
-    add_header X-Proxy-Cache $upstream_cache_status;
+    include /etc/nginx/conf.d/document-block-bots.inc;
+    include /etc/nginx/conf.d/document-cache-params.inc;
   }
+
 {% endfor %}
+  location ~* /api/document/.+/md$ {
+    proxy_pass http://docker-publisher{{domain.root}}$request_uri;
+    proxy_redirect http://$host{{domain.root}}/ /;
+    include /etc/nginx/conf.d/document-cache-params.inc;
+  }
+
+  location {{ "~*" if domain.root == "" else "^~" }} /api/parts/ {
+    proxy_pass http://docker-publisher{{domain.root}}$request_uri;
+    proxy_redirect http://$host{{domain.root}}/ /;
+{{ proxy_headers() }}
+{{ parts_cache(parts_expires) }}
+  }
+{% endif %}
+
+{% if domain.allow_apps %}
+  location ~ ^/exist/apps/([^/]+) {
+    proxy_pass http://docker-publisher$request_uri;
+    proxy_redirect http://$host/exist/apps/$1/ /exist/apps/$1/;
+{{ proxy_headers('/exist') }}
+  }
 {% endif %}
 
 {% if services.iiif %}
@@ -98,4 +136,22 @@ server {
   }
 {% endif %}
 }
+
+{% for alias in domain.aliases | default([]) %}
+# {{alias}} permanently redirects to {{domain.hostname}}
+server {
+  listen 443 ssl;
+  listen [::]:443 ssl;
+
+  server_name {{alias}};
+
+  ssl_certificate /etc/nginx/ssl/live/{{alias}}/fullchain.pem;
+  ssl_certificate_key /etc/nginx/ssl/live/{{alias}}/privkey.pem;
+
+  include /etc/nginx/conf.d/block-probes.inc;
+
+  return 301 https://{{domain.hostname}}$request_uri;
+}
+
+{% endfor %}
 {% endfor %}

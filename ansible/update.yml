@@ -1,11 +1,10 @@
 - hosts: all
-  # Rebuilds everything on the host using the existing Dockerfile and setup
+  # Pulls (or rebuilds) the publisher image and restarts everything using the
+  # existing configuration on the host.
+  # Note: pruning volumes deletes the database. The admin password from .env is
+  # applied again by the publisher entrypoint on the fresh database.
   vars_files:
     - ./variables.yml
-  vars_prompt:
-    - name: admin_pass
-      prompt: Provide a password for the eXist-db admin user
-      default: ""
   tasks:
     - name: Stop docker
       ansible.builtin.shell:
@@ -19,30 +18,13 @@
       ansible.builtin.shell:
         cmd: docker compose build --no-cache --pull
         chdir: "{{dest}}"
-      environment:
-        BUILD_CONTEXT: "{{ publisher.build.context }}"
-        CONTEXT_PATH: "{{publisher.context_path}}"
+      when: publisher.apps | default([]) | length > 0
+    - name: Pull images
+      ansible.builtin.shell:
+        cmd: docker compose pull --ignore-buildable
+        chdir: "{{dest}}"
     - name: Start docker
       ansible.builtin.shell:
         cmd: docker compose up -d --force-recreate
         chdir: "{{dest}}"
-      environment:
-        IIIF_IMAGES: "{{iiif.images}}"
-    - name: Wait for eXist-db
-      ansible.builtin.shell:
-        cmd: docker compose exec publisher java org.exist.start.Main client -x 'system:get-version()'
-        chdir: "{{dest}}"
-      register: result
-      until: result.rc == 0
-      retries: 5
-      delay: 10
-      tags:
-        - password
-    - name: Set admin password
-      ansible.builtin.shell:
-        cmd: docker compose exec publisher java org.exist.start.Main client -x 'sm:passwd("admin", "{{admin_passw}}")'
-        chdir: "{{dest}}"
-      when: admin_pass is defined and admin_pass != ''
-      tags:
-        - password
     - import_tasks: check.yml
